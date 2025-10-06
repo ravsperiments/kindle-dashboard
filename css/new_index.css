@@ -1,0 +1,133 @@
+body.new-layout {
+    background: #ffffff;
+    color: #000000;
+    font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+body.new-layout #page {
+    position: relative;
+    height: 100%;
+}
+
+body.new-layout #city {
+    display: none;
+}
+
+body.new-layout .top-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 55%;
+    display: flex;
+    padding: 3% 0;
+    box-sizing: border-box;
+    border-bottom: 4px solid #000000;
+}
+
+body.new-layout .top-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 6%;
+}
+
+body.new-layout .top-column.top-left {
+    align-items: flex-start;
+    text-align: left;
+}
+
+body.new-layout .top-column.top-right {
+    align-items: center;
+    border-left: 1px solid #000000;
+    text-align: center;
+}
+
+body.new-layout .top-weather-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3rem;
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+body.new-layout .top-date {
+    font-size: 4rem;
+    font-weight: 600;
+}
+
+body.new-layout .top-time {
+    font-size: 14rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    line-height: 1;
+}
+
+body.new-layout .top-temperature {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    font-size: 12rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+body.new-layout .top-weather-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+body.new-layout #iconWrapper {
+    position: static;
+    margin: 0;
+}
+
+body.new-layout #icon {
+    font-size: 14rem;
+}
+
+body.new-layout .top-temperature #temp {
+    font-size: inherit;
+    display: inline;
+}
+
+body.new-layout .temp-unit {
+    display: flex;
+    align-items: center;
+    font-size: 6rem;
+}
+
+body.new-layout .temp-unit i,
+body.new-layout .temp-unit span {
+    font-size: inherit;
+}
+
+body.new-layout .top-description {
+    margin-top: 2rem;
+    font-size: 4rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+body.new-layout #description {
+    position: static;
+}
+
+body.new-layout #lastUpdate {
+    display: none;
+}
+
+body.new-layout .forecast {
+    bottom: 6%;
+}
+
+body.new-layout #temp {
+    cursor: pointer;
+}
+
+body.new-layout .temp-unit {
+    min-width: 4rem;
+}
