@@ -1,0 +1,8 @@
+{
+  "name": "Local Web Server",
+  "priority": 100,
+  "items": [
+    { "name": "Start server", "action": "cmd", "params": ["/mnt/us/extensions/kindle-webserver/start.sh"] },
+    { "name": "Stop server",  "action": "cmd", "params": ["/mnt/us/extensions/kindle-webserver/stop.sh"] }
+  ]
+}
