@@ -575,6 +575,10 @@
             }
         }
 
+    // Expose key APIs for JSONP callbacks and string-based timer calls
+    window.jsonp = jsonp;
+    window.refreshData = refreshData;
+    window.clearScreen = clearScreen;
     }());
     </script>
 
