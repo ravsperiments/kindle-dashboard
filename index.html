@@ -332,8 +332,9 @@
         var timeFormat = "HH:mm";
 
         // Configuration: override config.js globals via URL params
+        var tempType;
         utcOffset = getUrlParameter("utcOffset") ? getUrlParameter("utcOffset") : utcOffset;
-        tempType = getUrlParameter("tempType") ? getUrlParameter("tempType") : tempType;
+        tempType  = getUrlParameter("tempType")  ? getUrlParameter("tempType")  : tempType;
 
         var dataTimeZone = 0;
 
