@@ -331,9 +331,7 @@
 
         var timeFormat = "HH:mm";
 
-        // Config parameters.
-        var api_params, api_appId, api_lang, api_units, api_locParams, rotation, night_mode, refreshTime, utcOffset, tempType;
-
+        // Configuration: override config.js globals via URL params
         utcOffset = getUrlParameter("utcOffset") ? getUrlParameter("utcOffset") : utcOffset;
         tempType = getUrlParameter("tempType") ? getUrlParameter("tempType") : tempType;
 
