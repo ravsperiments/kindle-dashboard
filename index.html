@@ -7,6 +7,16 @@
             content="width=320, initial-scale=1, maximum-scale=1, user-scalable=0, target-densitydpi=medium-dpi"
         />
         <title>Paperwhite Weather</title>
+        <link
+            rel="stylesheet"
+            type="text/css"
+            href="vendor/weathericons/css/weather-icons.css"
+        />
+        <link
+            rel="stylesheet"
+            type="text/css"
+            href="css/custom-icons.css"
+        />
         <link rel="stylesheet" type="text/css" href="css/kindle.css" />
         <script type="text/javascript">
             (function () {
@@ -115,7 +125,7 @@
                         (timestampSeconds + offsetSeconds) * 1000
                     );
                     var hours = date.getUTCHours();
-                    var suffix = hours >= 12 ? "PM" : "AM";
+                    var suffix = hours >= 12 ? "pm" : "am";
                     hours = hours % 12;
                     if (hours === 0) {
                         hours = 12;
@@ -146,7 +156,7 @@
                         (timestampSeconds + offsetSeconds) * 1000
                     );
                     var hours = date.getUTCHours();
-                    var suffix = hours >= 12 ? "PM" : "AM";
+                    var suffix = hours >= 12 ? "pm" : "am";
                     hours = hours % 12;
                     if (hours === 0) {
                         hours = 12;
@@ -166,7 +176,7 @@
                     );
                 }
 
-                var MOON_ICON_CLASSES = [
+                var moonIcons = [
                     ["wi-moon-alt-new", "wi-moon-alt-full"],
                     ["wi-moon-alt-waxing-crescent-1", "wi-moon-alt-waning-gibbous-1"],
                     ["wi-moon-alt-waxing-crescent-2", "wi-moon-alt-waning-gibbous-2"],
@@ -205,15 +215,30 @@
                     return mod;
                 }
 
-                function calculateMoonPhase(date) {
-                    var lp = 2551443; // length of lunar period in seconds
-                    var newMoon = new Date(Date.UTC(1970, 0, 7, 20, 35, 0));
+                function getMoonPhase(year, month, day) {
+                    var lp = 2551443;
+                    var now = new Date(year, month - 1, day, 20, 35, 0);
+                    var newMoon = new Date(1970, 0, 7, 20, 35, 0);
+                    var phase =
+                        ((now.getTime() - newMoon.getTime()) / 1000) % lp;
+                    return phase / lp;
+                }
+
+                function getMoonPhaseFromDate(date) {
+                    var lp = 2551443;
+                    var newMoon = new Date(1970, 0, 7, 20, 35, 0);
                     var phase =
                         ((date.getTime() - newMoon.getTime()) / 1000) % lp;
-                    if (phase < 0) {
-                        phase += lp;
-                    }
                     return phase / lp;
+                }
+
+                function getCurrentMoonPhase() {
+                    var now = new Date();
+                    return getMoonPhase(
+                        now.getFullYear(),
+                        now.getMonth() + 1,
+                        now.getDate()
+                    );
                 }
 
                 function isNightAtLocalSeconds(localSeconds) {
@@ -221,8 +246,8 @@
                         moonState.sunriseLocal === null ||
                         moonState.sunsetLocal === null
                     ) {
-                        var hours = Math.floor(localSeconds / 3600);
-                        return hours < 6 || hours >= 18;
+                        var phase = getCurrentMoonPhase();
+                        return phase > 0.5;
                     }
                     var sunrise = moonState.sunriseLocal;
                     var sunset = moonState.sunsetLocal;
@@ -232,7 +257,7 @@
                     return !(localSeconds >= sunrise && localSeconds < sunset);
                 }
 
-                function applyMoonOrientation() {
+                function applyMoonOrientation(className) {
                     if (!elements.moonPhase) {
                         return;
                     }
@@ -241,7 +266,6 @@
                         elements.moonPhase.style.webkitTransform = "";
                         return;
                     }
-                    var className = elements.moonPhase.className || "";
                     var direction =
                         className.indexOf("moonFirstHalf") !== -1 ? -1 : 1;
                     var rotation = (moonState.latitude - 90) * direction;
@@ -250,33 +274,18 @@
                     elements.moonPhase.style.webkitTransform = transform;
                 }
 
-                function moonPhaseIconClass(phase, isNight) {
-                    if (!MOON_ICON_CLASSES.length) {
-                        return {
-                            className: "wi moonIcon",
-                            firstHalf: phase < 0.5
-                        };
+                function getMoonIconClasses(phase, isNightMode) {
+                    var iconInterval = 1 / moonIcons.length;
+                    var index = Math.floor(phase / iconInterval);
+                    if (index >= moonIcons.length) {
+                        index = moonIcons.length - 1;
                     }
-                    var index = Math.floor(
-                        phase * MOON_ICON_CLASSES.length
+                    return (
+                        "wi " +
+                        moonIcons[index][isNightMode ? 1 : 0] +
+                        " moonIcon " +
+                        (phase < 0.5 ? "moonFirstHalf" : "moonSecondHalf")
                     );
-                    if (index >= MOON_ICON_CLASSES.length) {
-                        index = MOON_ICON_CLASSES.length - 1;
-                    }
-                    var pair = MOON_ICON_CLASSES[index] || [];
-                    var icon =
-                        pair[isNight ? 1 : 0] !== undefined
-                            ? pair[isNight ? 1 : 0]
-                            : pair[0] || "";
-                    var phaseClass = phase < 0.5 ? "moonFirstHalf" : "moonSecondHalf";
-                    return {
-                        className:
-                            "wi " +
-                            icon +
-                            " moonIcon " +
-                            phaseClass,
-                        firstHalf: phase < 0.5
-                    };
                 }
 
                 function updateMoonPhase(timestampSeconds, offsetSeconds) {
@@ -293,15 +302,15 @@
                     var localDate = new Date(
                         (timestampSeconds + offsetSeconds) * 1000
                     );
-                    var phase = calculateMoonPhase(localDate);
+                    var phase = getMoonPhaseFromDate(localDate);
                     var localSeconds = normalizeDaySeconds(
                         timestampSeconds + offsetSeconds
                     );
                     var isNight = isNightAtLocalSeconds(localSeconds);
-                    var iconData = moonPhaseIconClass(phase, isNight);
+                    var className = getMoonIconClasses(phase, isNight);
                     elements.moonPhase.textContent = "";
-                    elements.moonPhase.className = iconData.className;
-                    applyMoonOrientation();
+                    elements.moonPhase.className = className;
+                    applyMoonOrientation(className);
                 }
 
                 function formatDateLabel(timestampSeconds, offsetSeconds) {
