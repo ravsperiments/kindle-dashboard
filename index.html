@@ -16,7 +16,7 @@
                     window.console = {
                         log: function () {},
                         error: function () {},
-                        warn: function () {},
+                        warn: function () {}
                     };
                 }
 
@@ -105,7 +105,7 @@
 
                 function formatTime(timestampSeconds, offsetSeconds) {
                     var date = new Date(
-                        (timestampSeconds + offsetSeconds) * 1000,
+                        (timestampSeconds + offsetSeconds) * 1000
                     );
                     var hours = date.getUTCHours();
                     var suffix = hours >= 12 ? "PM" : "AM";
@@ -131,12 +131,12 @@
                     "Sep",
                     "Oct",
                     "Nov",
-                    "Dec",
+                    "Dec"
                 ];
 
                 function formatDateTime(timestampSeconds, offsetSeconds) {
                     var date = new Date(
-                        (timestampSeconds + offsetSeconds) * 1000,
+                        (timestampSeconds + offsetSeconds) * 1000
                     );
                     var hours = date.getUTCHours();
                     var suffix = hours >= 12 ? "PM" : "AM";
@@ -161,7 +161,7 @@
 
                 function formatDateLabel(timestampSeconds, offsetSeconds) {
                     var date = new Date(
-                        (timestampSeconds + offsetSeconds) * 1000,
+                        (timestampSeconds + offsetSeconds) * 1000
                     );
                     return (
                         DAYS[date.getUTCDay()] +
@@ -258,14 +258,14 @@
                             "dateValue",
                             "div",
                             "date-display",
-                            "--",
+                            "--"
                         );
                         elements.time = ensureElement(
                             timePanel,
                             "timeValue",
                             "div",
                             "time-display",
-                            "--",
+                            "--"
                         );
 
                         var sunTimes = byId("sunTimes");
@@ -277,12 +277,12 @@
                         elements.sunrise = ensureSunEntry(
                             sunTimes,
                             "sunriseValue",
-                            "Sunrise",
+                            "Sunrise"
                         );
                         elements.sunset = ensureSunEntry(
                             sunTimes,
                             "sunsetValue",
-                            "Sunset",
+                            "Sunset"
                         );
                     }
 
@@ -291,7 +291,7 @@
                         forecastCells.push({
                             time: byId("forecastTime" + i),
                             temp: byId("forecastTemp" + i),
-                            desc: byId("forecastDesc" + i),
+                            desc: byId("forecastDesc" + i)
                         });
                     }
 
@@ -406,11 +406,11 @@
                     if (data && typeof data.dt === "number") {
                         elements.date.textContent = formatDateLabel(
                             data.dt,
-                            timezoneOffset,
+                            timezoneOffset
                         );
                         elements.time.textContent = formatTime(
                             data.dt,
-                            timezoneOffset,
+                            timezoneOffset
                         );
                     } else {
                         elements.date.textContent = "--";
@@ -430,7 +430,7 @@
                         if (typeof sys.sunrise === "number") {
                             sunriseText = formatTime(
                                 sys.sunrise,
-                                timezoneOffset,
+                                timezoneOffset
                             );
                         }
                         if (typeof sys.sunset === "number") {
@@ -461,7 +461,7 @@
                         data.weather[0].description
                     ) {
                         descriptionText = capitalize(
-                            data.weather[0].description,
+                            data.weather[0].description
                         );
                     }
                     if (elements.description) {
@@ -509,10 +509,10 @@
                             var entry = data.list[i];
                             forecastCells[i].time.textContent = formatTime(
                                 entry.dt,
-                                timezoneOffset,
+                                timezoneOffset
                             );
                             var forecastTemp = asRounded(
-                                entry.main && entry.main.temp,
+                                entry.main && entry.main.temp
                             );
                             forecastCells[i].temp.textContent =
                                 forecastTemp !== null
@@ -525,7 +525,7 @@
                                 entry.weather[0].main
                             ) {
                                 forecastDesc = capitalize(
-                                    entry.weather[0].main,
+                                    entry.weather[0].main
                                 );
                             }
                             forecastCells[i].desc.textContent = forecastDesc;
@@ -543,14 +543,14 @@
                     }
                     refreshTimer = window.setTimeout(
                         refreshAll,
-                        REFRESH_INTERVAL,
+                        REFRESH_INTERVAL
                     );
                 }
 
                 function loadCurrent(protocolIndex, onSuccess, onFailure) {
                     if (protocolIndex >= protocolCandidates.length) {
                         onFailure(
-                            "Weather update failed (all protocols exhausted)",
+                            "Weather update failed (all protocols exhausted)"
                         );
                         return;
                     }
@@ -570,7 +570,7 @@
                             updateTimePanel(data, timezoneOffset);
                             updateSunTimesPanel(
                                 data ? data.sys : null,
-                                timezoneOffset,
+                                timezoneOffset
                             );
                             updateWeatherPanel(data);
                             onSuccess(data);
@@ -581,21 +581,21 @@
                                 loadCurrent(
                                     protocolIndex + 1,
                                     onSuccess,
-                                    onFailure,
+                                    onFailure
                                 );
                             } else {
                                 onFailure(
-                                    "Weather update failed (" + reason + ")",
+                                    "Weather update failed (" + reason + ")"
                                 );
                             }
-                        },
+                        }
                     );
                 }
 
                 function loadForecast(protocolIndex, onSuccess, onFailure) {
                     if (protocolIndex >= protocolCandidates.length) {
                         onFailure(
-                            "Forecast update failed (all protocols exhausted)",
+                            "Forecast update failed (all protocols exhausted)"
                         );
                         return;
                     }
@@ -619,14 +619,14 @@
                                 loadForecast(
                                     protocolIndex + 1,
                                     onSuccess,
-                                    onFailure,
+                                    onFailure
                                 );
                             } else {
                                 onFailure(
-                                    "Forecast update failed (" + reason + ")",
+                                    "Forecast update failed (" + reason + ")"
                                 );
                             }
-                        },
+                        }
                     );
                 }
 
@@ -650,7 +650,7 @@
                             if (successCount === 2 && latestWeatherData) {
                                 var stamp = formatDateTime(
                                     latestWeatherData.dt,
-                                    latestWeatherData.timezone || 0,
+                                    latestWeatherData.timezone || 0
                                 );
                                 elements.updated.textContent = stamp;
                                 setStatus("Updated " + stamp);
@@ -671,7 +671,7 @@
                                 messageLocked = true;
                             }
                             markDone(false);
-                        },
+                        }
                     );
 
                     loadForecast(
@@ -686,7 +686,7 @@
                             }
                             resetForecastPanel();
                             markDone(false);
-                        },
+                        }
                     );
                 }
 
