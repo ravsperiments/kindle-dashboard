@@ -87,7 +87,7 @@ html.night {
 
 #moonphaseIcon {
     font-size: 24px;
-    font-size: 3.4rem;
+    font-size: 6rem;
     line-height: 1;
     display: inline-block;
     vertical-align: middle;
@@ -106,12 +106,12 @@ html.night {
 
 #moonphaseDate {
     font-size: 22px;
-    font-size: 3rem;
+    font-size: 6rem;
 }
 
 #currentTime {
     font-size: 50px;
-    font-size: 24rem;
+    font-size: 18rem;
 }
 
 #iconWrapper,
@@ -124,7 +124,7 @@ html.night {
     bottom: 1.5%;
     left: 3.3%;
     font-size: 22px;
-    font-size: 5rem;
+    font-size: 3rem;
     text-align: left;
 }
 
@@ -175,7 +175,7 @@ html.night {
     margin-top: 8px;
     margin-top: 1.6rem;
     font-size: 22px;
-    font-size: 3rem;
+    font-size: 6rem;
 }
 
 .forecastIconWrapper {
@@ -266,7 +266,6 @@ html.night {
     font-size: 25.3px;
     font-size: 5rem;
     margin-bottom: 0.3rem;
-}
 }
 
 .landscape .colDesc {
