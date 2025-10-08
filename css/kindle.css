@@ -6,137 +6,84 @@ body {
     background: #ffffff;
     color: #000000;
     font-family: Helvetica, Arial, sans-serif;
-    font-size: 16px;
 }
 
 #app {
     box-sizing: border-box;
-    padding: 1.8rem 2.2rem;
-    min-height: 100%;
+    padding: 3rem 3.5rem;
+    height: 100%;
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2.5rem;
 }
 
 #mainPanel {
-    display: flex;
-    flex: 1 1 auto;
-    gap: 2.2rem;
-    min-height: 0;
-    align-items: stretch;
-}
-
-#timePanel,
-#weatherPanel {
-    flex: 1 1 0;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 1.4rem;
-    min-width: 0;
-}
-
-#timePanel {
     align-items: flex-start;
     text-align: left;
+    gap: 2rem;
 }
 
-#dateValue {
-    font-size: 2.2rem;
-    font-weight: 600;
-}
-
-#timeValue {
-    font-size: 6rem;
-    font-weight: bold;
-    line-height: 1;
-}
-
-#sunTimes {
+#topRow {
     display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    font-size: 1.4rem;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.6rem;
 }
 
-#sunTimes .sun-entry {
-    display: flex;
-    gap: 0.35rem;
-    white-space: nowrap;
-    align-items: baseline;
-}
-
-#weatherPanel {
-    align-items: flex-end;
-    text-align: right;
-    padding-left: 2rem;
-    border-left: 0.08rem solid #000000;
-    gap: 1rem;
+.moonIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4.4rem;
 }
 
 #temperatureWrapper {
     display: flex;
     align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+    gap: 0.6rem;
 }
 
 #temperature {
-    font-size: 6rem;
+    font-size: 5.2rem;
+    font-weight: 600;
     line-height: 1;
-    font-weight: bolder;
 }
 
 #unit {
-    font-size: 3rem;
-    margin-left: 0;
+    font-size: 2.4rem;
+    font-weight: 500;
 }
 
-#description {
-    font-size: 2rem;
+#dateValue {
+    font-size: 3.2rem;
     font-weight: 600;
-    margin-top: 0;
-    text-transform: none;
-    letter-spacing: normal;
+    letter-spacing: 0.02em;
 }
 
-#details {
-    display: grid;
-    grid-template-columns: repeat(2, auto);
-    column-gap: 1.6rem;
-    row-gap: 0.8rem;
-    justify-content: flex-end;
-    text-align: right;
-    font-size: 1rem;
-    margin-top: 0;
-}
-
-#details > span {
-    display: flex;
-    align-items: baseline;
-    gap: 0.4rem;
-    justify-content: flex-end;
-}
-
-.detail-label {
-    font-weight: 600;
-    display: inline-block;
-    min-width: 6ch;
+#timeValue {
+    font-size: 6.4rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1;
 }
 
 #bottomPanel {
-    flex: 0 0 auto;
-    margin-top: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 0.15rem solid #000000;
+    width: 100%;
 }
 
 #forecast {
-    border-top: 0.15rem solid #000000;
-    padding-top: 1.2rem;
     display: flex;
     justify-content: space-between;
     gap: 0.8rem;
+    border-top: 0.12rem solid #000000;
+    border-bottom: 0.05rem solid #000000;
+    padding: 1.2rem 0;
 }
 
 .forecast-item {
@@ -150,68 +97,54 @@ body {
 }
 
 .forecast-time {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
 }
 
 .forecast-temp {
-    font-size: 3rem;
-    font-weight: bold;
+    font-size: 2.4rem;
+    font-weight: 600;
     margin-top: 0.4rem;
 }
 
 .forecast-desc {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     margin-top: 0.4rem;
     text-transform: capitalize;
 }
 
 #footer {
-    flex: 0 0 auto;
+    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 1.4rem;
+    font-size: 1.2rem;
 }
 
 #updatedInfo {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
 }
 
 #status {
     text-align: right;
-    max-width: 60%;
-    font-size: 1.4rem;
+    max-width: 50%;
+    font-size: 1.2rem;
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 480px) {
     #app {
-        padding: 1.2rem 1.6rem;
-        gap: 1.2rem;
+        padding: 2.4rem 2.2rem;
+        gap: 2rem;
     }
 
-    #mainPanel {
-        flex-wrap: nowrap;
-        align-items: flex-start;
-        gap: 1.4rem;
-    }
-
-    #timePanel {
-        align-items: flex-start;
-        text-align: left;
-        min-width: 0;
+    #topRow {
+        flex-direction: column;
         gap: 1rem;
     }
 
-    #weatherPanel {
-        align-items: flex-end;
-        text-align: right;
-        min-width: 0;
-        padding-left: 1.6rem;
-        border-left: 0.06rem solid #000000;
-        gap: 0.8rem;
+    .moonIcon {
+        font-size: 3.8rem;
     }
 
-    #timeValue,
     #temperature {
         font-size: 4.4rem;
     }
@@ -221,117 +154,28 @@ body {
     }
 
     #dateValue {
-        font-size: 1.8rem;
+        font-size: 2.6rem;
     }
 
-    #sunTimes {
-        font-size: 1.3rem;
-    }
-
-    #description {
-        font-size: 1.5rem;
-    }
-
-    #details {
-        justify-content: flex-end;
-        font-size: 0.9rem;
-        column-gap: 1.4rem;
-        row-gap: 0.6rem;
-    }
-}
-
-@media (max-width: 800px) {
-    #app {
-        padding: 1rem 1.4rem;
-        gap: 1rem;
-    }
-
-    #mainPanel {
-        gap: 1rem;
-    }
-
-    #timeValue,
-    #temperature {
-        font-size: 3.6rem;
-    }
-
-    #unit {
-        font-size: 1.8rem;
-    }
-
-    #dateValue {
-        font-size: 1.6rem;
-    }
-
-    #sunTimes {
-        font-size: 1.1rem;
-        gap: 0.6rem;
-    }
-
-    #description {
-        font-size: 1.4rem;
-    }
-
-    #details {
-        font-size: 0.9rem;
-        column-gap: 1.2rem;
-        row-gap: 0.6rem;
-    }
-
-    #forecast {
-        gap: 0.5rem;
-    }
-
-    #weatherPanel {
-        padding-left: 1.2rem;
-        border-left: 0.05rem solid #000000;
-        gap: 0.6rem;
-    }
-}
-
-@media (max-width: 300px) {
-    #mainPanel {
-        flex-direction: column;
-    }
-
-    #timePanel,
-    #weatherPanel {
-        align-items: flex-start;
-        text-align: left;
-        gap: 1rem;
-    }
-
-    #weatherPanel {
-        padding-left: 0;
-        border-left: none;
-    }
-
-    #details {
-        grid-template-columns: 1fr;
-        justify-content: flex-start;
-        text-align: left;
+    #timeValue {
+        font-size: 5.2rem;
     }
 
     #forecast {
         flex-direction: column;
         gap: 0.6rem;
-    }
-
-    .forecast-item {
-        padding: 0;
     }
 
     .forecast-item:not(:last-child) {
         border-right: none;
         border-bottom: 0.05rem solid #000000;
-        padding-bottom: 0.6rem;
-        margin-bottom: 0.6rem;
+        padding-bottom: 0.8rem;
     }
 
     #footer {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.4rem;
+        gap: 0.6rem;
     }
 
     #status {

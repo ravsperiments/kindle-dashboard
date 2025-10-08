@@ -81,6 +81,13 @@
                 var elements = {};
                 var forecastCells = [];
                 var refreshTimer = null;
+                var moonState = {
+                    sunriseLocal: null,
+                    sunsetLocal: null,
+                    latitude: null,
+                    lastTimestamp: null,
+                    lastOffset: 0
+                };
 
                 function byId(id) {
                     return document.getElementById(id);
@@ -159,6 +166,144 @@
                     );
                 }
 
+                var MOON_ICON_CLASSES = [
+                    ["wi-moon-alt-new", "wi-moon-alt-full"],
+                    ["wi-moon-alt-waxing-crescent-1", "wi-moon-alt-waning-gibbous-1"],
+                    ["wi-moon-alt-waxing-crescent-2", "wi-moon-alt-waning-gibbous-2"],
+                    ["wi-moon-alt-waxing-crescent-3", "wi-moon-alt-waning-gibbous-3"],
+                    ["wi-moon-alt-waxing-crescent-4", "wi-moon-alt-waning-gibbous-4"],
+                    ["wi-moon-alt-waxing-crescent-5", "wi-moon-alt-waning-gibbous-5"],
+                    ["wi-moon-alt-waxing-crescent-6", "wi-moon-alt-waning-gibbous-6"],
+                    ["wi-moon-alt-first-quarter", "wi-moon-alt-third-quarter"],
+                    ["wi-moon-alt-waxing-gibbous-1", "wi-moon-alt-waning-crescent-1"],
+                    ["wi-moon-alt-waxing-gibbous-2", "wi-moon-alt-waning-crescent-2"],
+                    ["wi-moon-alt-waxing-gibbous-3", "wi-moon-alt-waning-crescent-3"],
+                    ["wi-moon-alt-waxing-gibbous-4", "wi-moon-alt-waning-crescent-4"],
+                    ["wi-moon-alt-waxing-gibbous-5", "wi-moon-alt-waning-crescent-5"],
+                    ["wi-moon-alt-waxing-gibbous-6", "wi-moon-alt-waning-crescent-6"],
+                    ["wi-moon-alt-full", "wi-moon-alt-new"],
+                    ["wi-moon-alt-waning-gibbous-1", "wi-moon-alt-waxing-crescent-1"],
+                    ["wi-moon-alt-waning-gibbous-2", "wi-moon-alt-waxing-crescent-2"],
+                    ["wi-moon-alt-waning-gibbous-3", "wi-moon-alt-waxing-crescent-3"],
+                    ["wi-moon-alt-waning-gibbous-4", "wi-moon-alt-waxing-crescent-4"],
+                    ["wi-moon-alt-waning-gibbous-5", "wi-moon-alt-waxing-crescent-5"],
+                    ["wi-moon-alt-waning-gibbous-6", "wi-moon-alt-waxing-crescent-6"],
+                    ["wi-moon-alt-third-quarter", "wi-moon-alt-first-quarter"],
+                    ["wi-moon-alt-waning-crescent-1", "wi-moon-alt-waxing-gibbous-1"],
+                    ["wi-moon-alt-waning-crescent-2", "wi-moon-alt-waxing-gibbous-2"],
+                    ["wi-moon-alt-waning-crescent-3", "wi-moon-alt-waxing-gibbous-3"],
+                    ["wi-moon-alt-waning-crescent-4", "wi-moon-alt-waxing-gibbous-4"],
+                    ["wi-moon-alt-waning-crescent-5", "wi-moon-alt-waxing-gibbous-5"],
+                    ["wi-moon-alt-waning-crescent-6", "wi-moon-alt-waxing-gibbous-6"]
+                ];
+
+                function normalizeDaySeconds(value) {
+                    var mod = value % 86400;
+                    if (mod < 0) {
+                        mod += 86400;
+                    }
+                    return mod;
+                }
+
+                function calculateMoonPhase(date) {
+                    var lp = 2551443; // length of lunar period in seconds
+                    var newMoon = new Date(Date.UTC(1970, 0, 7, 20, 35, 0));
+                    var phase =
+                        ((date.getTime() - newMoon.getTime()) / 1000) % lp;
+                    if (phase < 0) {
+                        phase += lp;
+                    }
+                    return phase / lp;
+                }
+
+                function isNightAtLocalSeconds(localSeconds) {
+                    if (
+                        moonState.sunriseLocal === null ||
+                        moonState.sunsetLocal === null
+                    ) {
+                        var hours = Math.floor(localSeconds / 3600);
+                        return hours < 6 || hours >= 18;
+                    }
+                    var sunrise = moonState.sunriseLocal;
+                    var sunset = moonState.sunsetLocal;
+                    if (sunrise <= sunset) {
+                        return localSeconds < sunrise || localSeconds >= sunset;
+                    }
+                    return !(localSeconds >= sunrise && localSeconds < sunset);
+                }
+
+                function applyMoonOrientation() {
+                    if (!elements.moonPhase) {
+                        return;
+                    }
+                    if (typeof moonState.latitude !== "number") {
+                        elements.moonPhase.style.transform = "";
+                        elements.moonPhase.style.webkitTransform = "";
+                        return;
+                    }
+                    var className = elements.moonPhase.className || "";
+                    var direction =
+                        className.indexOf("moonFirstHalf") !== -1 ? -1 : 1;
+                    var rotation = (moonState.latitude - 90) * direction;
+                    var transform = "rotate(" + rotation + "deg)";
+                    elements.moonPhase.style.transform = transform;
+                    elements.moonPhase.style.webkitTransform = transform;
+                }
+
+                function moonPhaseIconClass(phase, isNight) {
+                    if (!MOON_ICON_CLASSES.length) {
+                        return {
+                            className: "wi moonIcon",
+                            firstHalf: phase < 0.5
+                        };
+                    }
+                    var index = Math.floor(
+                        phase * MOON_ICON_CLASSES.length
+                    );
+                    if (index >= MOON_ICON_CLASSES.length) {
+                        index = MOON_ICON_CLASSES.length - 1;
+                    }
+                    var pair = MOON_ICON_CLASSES[index] || [];
+                    var icon =
+                        pair[isNight ? 1 : 0] !== undefined
+                            ? pair[isNight ? 1 : 0]
+                            : pair[0] || "";
+                    var phaseClass = phase < 0.5 ? "moonFirstHalf" : "moonSecondHalf";
+                    return {
+                        className:
+                            "wi " +
+                            icon +
+                            " moonIcon " +
+                            phaseClass,
+                        firstHalf: phase < 0.5
+                    };
+                }
+
+                function updateMoonPhase(timestampSeconds, offsetSeconds) {
+                    if (!elements.moonPhase) {
+                        return;
+                    }
+                    if (typeof timestampSeconds !== "number") {
+                        elements.moonPhase.textContent = "--";
+                        elements.moonPhase.className = "wi moonIcon";
+                        elements.moonPhase.style.transform = "";
+                        elements.moonPhase.style.webkitTransform = "";
+                        return;
+                    }
+                    var localDate = new Date(
+                        (timestampSeconds + offsetSeconds) * 1000
+                    );
+                    var phase = calculateMoonPhase(localDate);
+                    var localSeconds = normalizeDaySeconds(
+                        timestampSeconds + offsetSeconds
+                    );
+                    var isNight = isNightAtLocalSeconds(localSeconds);
+                    var iconData = moonPhaseIconClass(phase, isNight);
+                    elements.moonPhase.textContent = "";
+                    elements.moonPhase.className = iconData.className;
+                    applyMoonOrientation();
+                }
+
                 function formatDateLabel(timestampSeconds, offsetSeconds) {
                     var date = new Date(
                         (timestampSeconds + offsetSeconds) * 1000
@@ -190,54 +335,7 @@
                     }
                 }
 
-                function ensureElement(parent, id, tagName, className, text) {
-                    var existing = byId(id);
-                    if (existing) {
-                        return existing;
-                    }
-                    if (!parent) {
-                        return null;
-                    }
-                    var el = document.createElement(tagName || "div");
-                    el.id = id;
-                    if (className) {
-                        el.className = className;
-                    }
-                    if (typeof text === "string") {
-                        el.textContent = text;
-                    }
-                    parent.appendChild(el);
-                    return el;
-                }
-
-                function ensureSunEntry(container, valueId, labelText) {
-                    var valueEl = byId(valueId);
-                    if (valueEl) {
-                        return valueEl;
-                    }
-                    if (!container) {
-                        return null;
-                    }
-                    var entry = document.createElement("div");
-                    entry.className = "sun-entry";
-
-                    var label = document.createElement("span");
-                    label.className = "detail-label";
-                    label.textContent = labelText + ":";
-                    entry.appendChild(label);
-
-                    var value = document.createElement("span");
-                    value.id = valueId;
-                    value.textContent = "--";
-                    entry.appendChild(value);
-
-                    container.appendChild(entry);
-                    return value;
-                }
-
                 function initElements() {
-                    var timePanel = byId("timePanel");
-
                     elements.temperature = byId("temperature");
                     elements.unit = byId("unit");
                     elements.description = byId("description");
@@ -249,42 +347,9 @@
 
                     elements.date = byId("dateValue");
                     elements.time = byId("timeValue");
+                    elements.moonPhase = byId("moonPhaseIcon");
                     elements.sunrise = byId("sunriseValue");
                     elements.sunset = byId("sunsetValue");
-
-                    if (timePanel) {
-                        elements.date = ensureElement(
-                            timePanel,
-                            "dateValue",
-                            "div",
-                            "date-display",
-                            "--"
-                        );
-                        elements.time = ensureElement(
-                            timePanel,
-                            "timeValue",
-                            "div",
-                            "time-display",
-                            "--"
-                        );
-
-                        var sunTimes = byId("sunTimes");
-                        if (!sunTimes) {
-                            sunTimes = document.createElement("div");
-                            sunTimes.id = "sunTimes";
-                            timePanel.appendChild(sunTimes);
-                        }
-                        elements.sunrise = ensureSunEntry(
-                            sunTimes,
-                            "sunriseValue",
-                            "Sunrise"
-                        );
-                        elements.sunset = ensureSunEntry(
-                            sunTimes,
-                            "sunsetValue",
-                            "Sunset"
-                        );
-                    }
 
                     var i;
                     for (i = 0; i < FORECAST_ITEMS; i++) {
@@ -300,6 +365,10 @@
                     }
                     if (elements.time && !elements.time.textContent) {
                         elements.time.textContent = "--";
+                    }
+                    if (elements.moonPhase) {
+                        elements.moonPhase.textContent = "--";
+                        elements.moonPhase.className = "wi moonIcon";
                     }
                     if (elements.sunrise) {
                         elements.sunrise.textContent = "--";
@@ -399,32 +468,51 @@
                 }
 
                 function updateTimePanel(data, timezoneOffset) {
-                    if (!elements.date || !elements.time) {
+                    var hasDate = !!elements.date;
+                    var hasTime = !!elements.time;
+                    var hasMoon = !!elements.moonPhase;
+                    if (!hasDate && !hasTime && !hasMoon) {
                         return;
                     }
 
                     if (data && typeof data.dt === "number") {
-                        elements.date.textContent = formatDateLabel(
-                            data.dt,
-                            timezoneOffset
-                        );
-                        elements.time.textContent = formatTime(
-                            data.dt,
-                            timezoneOffset
-                        );
+                        moonState.lastTimestamp = data.dt;
+                        moonState.lastOffset = timezoneOffset;
+                        if (hasDate) {
+                            elements.date.textContent = formatDateLabel(
+                                data.dt,
+                                timezoneOffset
+                            );
+                        }
+                        if (hasTime) {
+                            elements.time.textContent = formatTime(
+                                data.dt,
+                                timezoneOffset
+                            );
+                        }
+                        if (hasMoon) {
+                            updateMoonPhase(data.dt, timezoneOffset);
+                        }
                     } else {
-                        elements.date.textContent = "--";
-                        elements.time.textContent = "--";
+                        moonState.lastTimestamp = null;
+                        moonState.lastOffset = 0;
+                        if (hasDate) {
+                            elements.date.textContent = "--";
+                        }
+                        if (hasTime) {
+                            elements.time.textContent = "--";
+                        }
+                        if (hasMoon) {
+                            updateMoonPhase(null, 0);
+                        }
                     }
                 }
 
                 function updateSunTimesPanel(sys, timezoneOffset) {
-                    if (!elements.sunrise || !elements.sunset) {
-                        return;
-                    }
-
                     var sunriseText = "--";
                     var sunsetText = "--";
+                    var sunriseLocal = null;
+                    var sunsetLocal = null;
 
                     if (sys) {
                         if (typeof sys.sunrise === "number") {
@@ -432,14 +520,34 @@
                                 sys.sunrise,
                                 timezoneOffset
                             );
+                            sunriseLocal = normalizeDaySeconds(
+                                sys.sunrise + timezoneOffset
+                            );
                         }
                         if (typeof sys.sunset === "number") {
                             sunsetText = formatTime(sys.sunset, timezoneOffset);
+                            sunsetLocal = normalizeDaySeconds(
+                                sys.sunset + timezoneOffset
+                            );
                         }
                     }
 
-                    elements.sunrise.textContent = sunriseText;
-                    elements.sunset.textContent = sunsetText;
+                    moonState.sunriseLocal = sunriseLocal;
+                    moonState.sunsetLocal = sunsetLocal;
+
+                    if (elements.sunrise) {
+                        elements.sunrise.textContent = sunriseText;
+                    }
+                    if (elements.sunset) {
+                        elements.sunset.textContent = sunsetText;
+                    }
+
+                    if (moonState.lastTimestamp !== null) {
+                        updateMoonPhase(
+                            moonState.lastTimestamp,
+                            moonState.lastOffset
+                        );
+                    }
                 }
 
                 function updateWeatherPanel(data) {
@@ -494,6 +602,18 @@
                     if (elements.humidity) {
                         elements.humidity.textContent =
                             humidityValue !== null ? humidityValue + "%" : "--";
+                    }
+
+                    if (
+                        data.coord &&
+                        data.coord.lat !== undefined &&
+                        data.coord.lat !== null
+                    ) {
+                        var parsedLat = parseFloat(data.coord.lat);
+                        if (!isNaN(parsedLat)) {
+                            moonState.latitude = parsedLat;
+                            applyMoonOrientation();
+                        }
                     }
                 }
 
@@ -701,30 +821,15 @@
     <body>
         <div id="app">
             <div id="mainPanel">
-                <div id="timePanel"></div>
-                <div id="weatherPanel">
-                    <div id="temperatureRow">
-                        <div id="temperatureWrapper">
-                            <span id="temperature">--</span>
-                            <span id="unit">°C</span>
-                        </div>
-                    </div>
-                    <div id="description">Loading...</div>
-                    <div id="details">
-                        <span>
-                            <span class="detail-label">Feels:</span>
-                            <span id="feelsLikeValue">--</span>
-                        </span>
-                        <span>
-                            <span class="detail-label">Wind:</span>
-                            <span id="windValue">--</span>
-                        </span>
-                        <span>
-                            <span class="detail-label">Humidity:</span>
-                            <span id="humidityValue">--</span></span
-                        >
+                <div id="topRow">
+                    <i id="moonPhaseIcon" class="moonIcon wi">--</i>
+                    <div id="temperatureWrapper">
+                        <span id="temperature">--</span>
+                        <span id="unit">°C</span>
                     </div>
                 </div>
+                <div id="dateValue" class="date-display">--</div>
+                <div id="timeValue" class="time-display">--</div>
             </div>
             <div id="bottomPanel">
                 <div id="forecast">
