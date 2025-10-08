@@ -63,11 +63,13 @@
                     var date = new Date(
                         (timestampSeconds + offsetSeconds) * 1000,
                     );
-                    return (
-                        pad(date.getUTCHours()) +
-                        ":" +
-                        pad(date.getUTCMinutes())
-                    );
+                    var hours = date.getUTCHours();
+                    var suffix = hours >= 12 ? "PM" : "AM";
+                    hours = hours % 12;
+                    if (hours === 0) {
+                        hours = 12;
+                    }
+                    return hours + ":" + pad(date.getUTCMinutes()) + " " + suffix;
                 }
 
                 var DAYS = [
@@ -98,6 +100,12 @@
                     var date = new Date(
                         (timestampSeconds + offsetSeconds) * 1000,
                     );
+                    var hours = date.getUTCHours();
+                    var suffix = hours >= 12 ? "PM" : "AM";
+                    hours = hours % 12;
+                    if (hours === 0) {
+                        hours = 12;
+                    }
                     return (
                         DAYS[date.getUTCDay()] +
                         " " +
@@ -105,9 +113,11 @@
                         " " +
                         pad(date.getUTCDate()) +
                         " " +
-                        pad(date.getUTCHours()) +
+                        hours +
                         ":" +
-                        pad(date.getUTCMinutes())
+                        pad(date.getUTCMinutes()) +
+                        " " +
+                        suffix
                     );
                 }
 
@@ -538,11 +548,11 @@
                     <div id="dateValue">--</div>
                     <div id="timeValue">--</div>
                     <div id="sunTimes">
-                        <span>
+                        <span class="sun-entry">
                             <span class="detail-label">Sunrise:</span>
                             <span id="sunriseValue">--</span>
                         </span>
-                        <span>
+                        <span class="sun-entry">
                             <span class="detail-label">Sunset:</span>
                             <span id="sunsetValue">--</span>
                         </span>
