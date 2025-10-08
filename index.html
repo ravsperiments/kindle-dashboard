@@ -67,7 +67,6 @@
 
                 var LATITUDE = 47.7258;
                 var LONGITUDE = -122.1649;
-                var LOCATION_NAME = "Redmond, WA";
                 var APP_ID = "a4ca63cec93d4b0dcebe65db9a53931a";
                 var UNITS = "metric";
                 var UNIT_SYMBOL = UNITS === "imperial" ? "°F" : "°C";
@@ -248,19 +247,12 @@
                     elements.updated = byId("updatedValue");
                     elements.status = byId("status");
 
-                    elements.location = byId("location");
                     elements.date = byId("dateValue");
                     elements.time = byId("timeValue");
                     elements.sunrise = byId("sunriseValue");
                     elements.sunset = byId("sunsetValue");
 
                     if (timePanel) {
-                        elements.location = ensureElement(
-                            timePanel,
-                            "location",
-                            "div",
-                            "location",
-                        );
                         elements.date = ensureElement(
                             timePanel,
                             "dateValue",
@@ -303,9 +295,6 @@
                         });
                     }
 
-                    if (elements.location) {
-                        elements.location.textContent = LOCATION_NAME;
-                    }
                     if (elements.date && !elements.date.textContent) {
                         elements.date.textContent = "--";
                     }
@@ -410,15 +399,9 @@
                 }
 
                 function updateTimePanel(data, timezoneOffset) {
-                    if (!elements.location || !elements.date || !elements.time) {
+                    if (!elements.date || !elements.time) {
                         return;
                     }
-
-                    var locationText = LOCATION_NAME;
-                    if (data && data.name) {
-                        locationText = data.name;
-                    }
-                    elements.location.textContent = locationText;
 
                     if (data && typeof data.dt === "number") {
                         elements.date.textContent = formatDateLabel(
