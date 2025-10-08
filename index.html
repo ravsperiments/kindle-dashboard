@@ -8,6 +8,9 @@
     <script src="config.js" type="text/javascript"></script>
     <link rel="stylesheet" type="text/css" href="vendor/weathericons/css/weather-icons.css"/>
     <link rel="stylesheet" type="text/css" href="css/custom-icons.css"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="css/kindle.css"/>
 
     <script type="text/javascript">
@@ -337,7 +340,6 @@
         var page = null;
         var temp = null;
         var icon = null;
-        var city = null;
         var moonphaseDate = null;
         var moonphaseIcon = null;
         var currentTimeElement = null;
@@ -483,17 +485,11 @@
             temp = document.getElementById("temp");
             icon = document.getElementById("icon");
 
-            city = document.getElementById("city");
             moonphaseDate = document.getElementById("moonphaseDate");
             moonphaseIcon = document.getElementById("moonphaseIcon");
             currentTimeElement = document.getElementById("currentTime");
             startTopSectionTimer();
             updateTopSection();
-            city.addEventListener('click', function (event) {
-                event.preventDefault();
-                window.location.href = window.location.href.replace("/index.html", "/config.html");
-                return false
-            });
             temp.addEventListener('click', function (event) {
                 event.preventDefault();
                 var newHref = window.location.href.replace(/[&?]tempType=[^&]*/, "");
@@ -644,13 +640,18 @@
 
 <body>
 <div id="page">
-    <a id="city" href="./config.html">
+    <div id="clock">
         <span id="moonphaseLine">
             <i id="moonphaseIcon"></i>
             <span id="moonphaseDate"></span>
         </span>
         <span id="currentTime"></span>
         <span id="sun"></span>
+    </div>
+    <a id="configButton" href="./config.html" aria-label="Open settings">
+        <svg viewBox="0 0 24 24" role="img" aria-hidden="true">
+            <path d="M19.14 12.94c.03-.31.05-.63.05-.94s-.02-.63-.06-.94l2.03-1.6c.18-.14.23-.41.11-.62l-1.93-3.34a.5.5 0 0 0-.61-.23l-2.4.97c-.5-.39-1.05-.71-1.65-.95l-.37-2.53a.5.5 0 0 0-.5-.43h-3.8a.5.5 0 0 0-.5.43l-.37 2.53c-.6.24-1.15.56-1.65.95l-2.4-.97a.5.5 0 0 0-.61.23L2.7 8.84a.5.5 0 0 0 .11.62l2.03 1.6c-.04.31-.06.64-.06.94s.02.63.06.94l-2.03 1.6a.5.5 0 0 0-.11.62l1.93 3.34c.12.21.38.3.61.23l2.4-.97c.5.39 1.05.71 1.65.95l.37 2.53c.05.24.26.43.5.43h3.8c.24 0 .45-.19.5-.43l.37-2.53c.6-.24 1.15-.56 1.65-.95l2.4.97c.23.07.49-.02.61-.23l1.93-3.34a.5.5 0 0 0-.11-.62l-2.03-1.6ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/>
+        </svg>
     </a>
     <div id="iconWrapper"><i id="icon"></i></div>
     <div class="tempWrapper">

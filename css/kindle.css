@@ -3,7 +3,7 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Fredoka', sans-serif;
     font-size: 0;
 }
 
@@ -37,19 +37,47 @@ html.night {
     overflow: hidden;
 }
 
-#city {
+#clock {
     font-size: 50px;
     font-size: 7rem;
     position: absolute;
     top: 1.5%;
     left: 3.3%;
     display: block;
-    text-decoration: none;
     text-align: left;
 }
 
-#city:focus {
+#configButton {
+    position: absolute;
+    top: 1.5%;
+    right: 3.3%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 6rem;
+    height: 6rem;
+    color: #e3e3e3;
+    background-color: #000000;
+    border-radius: 50%;
+    text-decoration: none;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#configButton svg {
+    width: 60%;
+    height: 60%;
+    fill: currentColor;
+}
+
+#configButton:hover,
+#configButton:focus {
+    opacity: 0.8;
     outline: none;
+}
+
+.night #configButton {
+    background-color: #222222;
+    color: #e3e3e3;
 }
 
 #moonphaseLine {
@@ -95,11 +123,10 @@ html.night {
 #lastUpdate {
     position: absolute;
     bottom: 1.5%;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 3.3%;
     font-size: 22px;
     font-size: 3rem;
-    text-align: center;
+    text-align: left;
 }
 
 #icon {
@@ -181,7 +208,7 @@ html.night {
     display: none;
 }
 
-.landscape #city {
+.landscape #clock {
     font-size: 35.4px;
     font-size: 7rem;
 }
