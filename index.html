@@ -57,7 +57,8 @@
                 }, options.duration || 8000);
             }
         }
-        var apiProtocol = window.location.protocol === 'file:' ? 'https:' : window.location.protocol;
+        var apiProtocolConfig = (typeof api_protocol !== "undefined" && api_protocol) ? api_protocol : null;
+        var apiProtocol = apiProtocolConfig ? apiProtocolConfig : (window.location.protocol === 'file:' ? 'https:' : window.location.protocol);
 
         var jsonp = function () {
             return {
@@ -65,37 +66,107 @@
                 request: function (src, callback, id) {
                     try {
 
-                        var self = this,
-                            script = null;
+                        var self = this;
+                        var script = null;
+                        var timeoutHandle = null;
+                        var attemptIndex = 0;
+                        var currentSrc = null;
 
-                        self.done = false;
+                        var attempts = [];
+                        if (src.indexOf("https://") === 0) {
+                            attempts.push(src);
+                            attempts.push("http://" + src.substring(8));
+                        } else {
+                            attempts.push(src);
+                        }
 
                         if (typeof id === "undefined") {
                             id = "jsonp";
                         }
 
-                        if (document.getElementById(id) !== null) {
-                            script = document.getElementById(id);
-                            document.body.removeChild(script);
+                        function removeExistingScript() {
+                            var old = document.getElementById(id);
+                            if (old !== null && old.parentNode) {
+                                old.parentNode.removeChild(old);
+                            }
                         }
 
-                        script = document.createElement('script');
-                        script.type = 'application/javascript';
-                        script.id = id;
-                        script.src = src;
-                        script.onload = function () {
-                            console.log("onload");
+                        function cleanup() {
+                            if (timeoutHandle !== null) {
+                                window.clearTimeout(timeoutHandle);
+                                timeoutHandle = null;
+                            }
 
+                            if (script !== null) {
+                                script.onload = null;
+                                script.onerror = null;
+                                if (script.parentNode) {
+                                    script.parentNode.removeChild(script);
+                                }
+                                script = null;
+                            }
+                        }
+
+                        function fail(reason) {
+                            cleanup();
+                            var reasonText = reason;
+                            if (reason === "timeout") {
+                                reasonText = "request timed out";
+                            } else if (reason === "network-error") {
+                                reasonText = "network error";
+                            }
+
+                            var nextAttempt = attemptIndex + 1;
+                            if (nextAttempt < attempts.length) {
+                                showStatus("Retrying weather request over HTTP (" + reasonText + ")...");
+                                attemptIndex = nextAttempt;
+                                attemptLoad();
+                            } else {
+                                showStatus("Failed to load weather data (" + reasonText + ").", { persist: true });
+                                if (typeof callback !== "undefined") {
+                                    callback(null);
+                                }
+                            }
+                        }
+
+                        function succeed() {
+                            cleanup();
                             if (typeof callback !== "undefined") {
                                 callback(self.responseObject);
                             }
+                        }
 
-                            script.onload = null;
-                            document.body.removeChild(script);
-                            script = null;
-                        };
+                        function attemptLoad() {
+                            removeExistingScript();
 
-                        document.body.appendChild(script);
+                            self.responseObject = null;
+                            currentSrc = attempts[attemptIndex];
+
+                            script = document.createElement('script');
+                            script.type = 'application/javascript';
+                            script.id = id;
+                            script.src = currentSrc;
+                            script.onload = function () {
+                                console.log("onload");
+                                if (self.responseObject === null) {
+                                    // JSONP did not run (likely blocked). Treat as error.
+                                    fail("empty-response");
+                                    return;
+                                }
+                                succeed();
+                            };
+                            script.onerror = function () {
+                                fail("network-error");
+                            };
+
+                            timeoutHandle = window.setTimeout(function () {
+                                fail("timeout");
+                            }, 15000);
+
+                            document.body.appendChild(script);
+                        }
+
+                        attemptLoad();
                     } catch (exception) {
                         console.log(exception);
                     }
@@ -134,11 +205,14 @@
             refreshActualWeather();
             refreshForecastWeather();
 
-            showStatus("Waiting for weather data...");
             window.setTimeout("refreshData()", refreshTime);
         }
 
         function processForecastWeather(data) {
+            if (!data || !data.city || !data.list) {
+                showStatus("Forecast data missing.", { persist: true });
+                return;
+            }
             showStatus("Processing forecast...");
             dataTimeZone = data.city.timezone
 
@@ -250,6 +324,10 @@
         };
 
         function processActualWeather(data) {
+            if (!data || !data.weather || !data.main) {
+                showStatus("Current weather data missing.", { persist: true });
+                return;
+            }
             showStatus("Processing current weather...");
             dataTimeZone = data.timezone
 
