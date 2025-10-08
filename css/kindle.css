@@ -3,201 +3,251 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
-    background: #ffffff;
-    color: #000000;
-    font-family: Helvetica, Arial, sans-serif;
-}
-
-body {
+    font-family: Arial, Helvetica, sans-serif;
     font-size: 0;
 }
 
-#app {
+a {
+    color: #000000;
+    background: #ffffff;
+}
+
+.night a {
+    color: #ffffff;
+    background: #000000;
+}
+
+html.night {
+    color: #ffffff;
+    background: #000000;
+}
+
+#cleaner {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: none;
+}
+
+#page {
     position: relative;
     height: 100%;
-    width: 100%;
     overflow: hidden;
 }
 
-#mainPanel {
-    position: relative;
-    height: 100%;
-    width: 100%;
-}
-
-#topRow {
+#city {
+    font-size: 50px;
+    font-size: 7rem;
     position: absolute;
-    top: 10%;
-    left: 7%;
-    display: inline-flex;
-    align-items: center;
-    gap: 1rem;
+    top: 1.5%;
+    left: 3.3%;
+    display: block;
+    text-decoration: none;
+    text-align: left;
 }
 
-.moonIcon {
-    font-size: 5rem;
+#city:focus {
+    outline: none;
+}
+
+#moonphaseLine {
+    display: inline-block;
+    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
+}
+
+#moonphaseIcon {
+    font-size: 24px;
+    font-size: 3.4rem;
     line-height: 1;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+    margin-right: 0.6rem;
 }
 
-#temperatureWrapper {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.4rem;
-    white-space: nowrap;
+#moonphaseDate {
+    display: inline-block;
+    vertical-align: middle;
 }
 
-#temperature {
+#currentTime {
+    display: block;
+}
+
+#moonphaseDate {
+    font-size: 22px;
     font-size: 3rem;
-    font-weight: 700;
-    line-height: 1;
 }
 
-#unit {
+#currentTime {
+    font-size: 50px;
+    font-size: 24rem;
+}
+
+#iconWrapper,
+.tempWrapper {
+    display: none;
+}
+
+#lastUpdate {
+    position: absolute;
+    bottom: 1.5%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 22px;
     font-size: 3rem;
-    font-weight: 500;
-}
-
-#dateValue {
-    position: absolute;
-    top: 34%;
-    left: 7%;
-    font-size: 3rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-}
-
-#timeValue {
-    position: absolute;
-    top: 50%;
-    left: 7%;
-    font-size: 7.2rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    line-height: 1;
-}
-
-#bottomPanel {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 14%;
-    padding: 0 7%;
-}
-
-#forecast {
-    display: flex;
-    justify-content: space-between;
-    gap: 0.8rem;
-    border-top: 0.12rem solid #000000;
-    border-bottom: 0.05rem solid #000000;
-    padding: 1.2rem 0;
-}
-
-.forecast-item {
-    flex: 1 1 0;
     text-align: center;
-    padding: 0 0.6rem;
 }
 
-.forecast-item:not(:last-child) {
-    border-right: 0.05rem solid #000000;
+#icon {
+    font-size: 250px;
+    font-size: 35rem;
 }
 
-.forecast-time {
-    font-size: 1.4rem;
-}
-
-.forecast-temp {
-    font-size: 2.4rem;
-    font-weight: 600;
-    margin-top: 0.4rem;
-}
-
-.forecast-desc {
-    font-size: 1.2rem;
-    margin-top: 0.4rem;
-    text-transform: capitalize;
-}
-
-#footer {
+#iconWrapper {
     position: absolute;
-    left: 7%;
-    right: 7%;
-    bottom: 5%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.2rem;
+    left: 5%;
+    top: 8.5%;
 }
 
-#updatedInfo {
-    font-size: 1.2rem;
+.forecast {
+    position: absolute;
+    width: 100%;
+    bottom: 6%;
+    left: 0;
+    border-top: 5px solid black;
+    border-bottom: 1px solid black;
+    height: 39%;
 }
 
-#status {
-    text-align: right;
-    max-width: 55%;
-    font-size: 1.2rem;
+.night .forecast {
+    border-color: #ffffff;
 }
 
-@media (max-width: 480px) {
-    #topRow {
-        top: 8%;
-        left: 6%;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.8rem;
-    }
+.col {
+    width: 24.5%;
+    border-right: 1px solid black;
+    float: left;
+    text-align: center;
+    height: 100%;
+    overflow: hidden;
+}
 
-    .moonIcon {
-        font-size: 4.2rem;
-    }
+.night .col {
+    border-color: #ffffff;
+}
 
-    #temperature {
-        font-size: 5.4rem;
-    }
+.col:last-child {
+    border-right: none;
+}
 
-    #unit {
-        font-size: 2.4rem;
-    }
+#sun {
+    display: block;
+    margin-top: 8px;
+    margin-top: 1.6rem;
+    font-size: 22px;
+    font-size: 3rem;
+}
 
-    #dateValue {
-        top: 36%;
-        left: 6%;
-        font-size: 2.6rem;
-    }
+.forecastIconWrapper {
+    font-size: 100px;
+    font-size: 14.2rem;
+}
 
-    #timeValue {
-        top: 54%;
-        left: 6%;
-        font-size: 5.8rem;
-    }
+.colTemp {
+    font-size: 50px;
+    font-size: 7.1rem;
+}
 
-    #bottomPanel {
-        bottom: 20%;
-        padding: 0 6%;
-    }
+.colTime {
+    font-size: 35px;
+    font-size: 5rem;
+    margin-top: 5%;
+}
 
-    #forecast {
-        flex-direction: column;
-        gap: 0.6rem;
-    }
+.colDesc {
+    font-size: 20px;
+    font-size: 2.8rem;
+}
 
-    .forecast-item:not(:last-child) {
-        border-right: none;
-        border-bottom: 0.05rem solid #000000;
-        padding-bottom: 0.8rem;
-    }
+.portrait .col:nth-last-child(2) {
+    border-right: none;
+}
 
-    #footer {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.6rem;
-        bottom: 6%;
-    }
+.portrait .col5 {
+    display: none;
+}
 
-    #status {
-        max-width: 100%;
-        text-align: left;
-    }
+.landscape #city {
+    font-size: 35.4px;
+    font-size: 7rem;
+}
+
+.landscape #moonphaseIcon {
+    font-size: 16.9px;
+    font-size: 3.4rem;
+}
+
+.landscape #moonphaseDate {
+    font-size: 15.5px;
+    font-size: 3rem;
+}
+
+.landscape #currentTime {
+    font-size: 35.4px;
+    font-size: 7rem;
+}
+
+.landscape #temp {
+    font-size: 141.7px;
+    font-size: 28rem;
+}
+
+.landscape #lastUpdate {
+    font-size: 12.5px;
+    font-size: 2.5rem;
+    bottom: 2%;
+}
+
+.landscape #icon {
+    font-size: 177.1px;
+    font-size: 35rem;
+}
+.landscape #sun {
+    font-size: 21.8px;
+    font-size: 4.3rem;
+    margin-top: 6px;
+    margin-top: 1.2rem;
+}
+
+.landscape .forecastIconWrapper {
+    font-size: 71.9px;
+    font-size: 14.2rem;
+}
+
+.landscape .colTemp {
+    font-size: 35.9px;
+    font-size: 7.1rem;
+}
+
+.landscape .colTime {
+    font-size: 25.3px;
+    font-size: 5rem;
+}
+
+.landscape .colDesc {
+    font-size: 14.2px;
+    font-size: 2.8rem;
+}
+
+.landscape .col {
+    width: 19.5%;
+}
+
+.feelsLike,
+.feelsLike * {
+    font-style: italic;
 }

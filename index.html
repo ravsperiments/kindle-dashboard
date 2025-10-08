@@ -1,870 +1,696 @@
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-        <meta
-            name="viewport"
-            content="width=320, initial-scale=1, maximum-scale=1, user-scalable=0, target-densitydpi=medium-dpi"
-        />
-        <title>Paperwhite Weather</title>
-        <link
-            rel="stylesheet"
-            type="text/css"
-            href="vendor/weathericons/css/weather-icons.css"
-        />
-        <link
-            rel="stylesheet"
-            type="text/css"
-            href="css/custom-icons.css"
-        />
-        <link rel="stylesheet" type="text/css" href="css/kindle.css" />
-        <script type="text/javascript">
-            (function () {
-                "use strict";
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
+    <meta name="viewport"
+          content="width=320, initial-scale=1, maximum-scale=1, user-scalable=0, target-densitydpi=medium-dpi">
+    <script src="vendor/moment/moment-with-locales.js" type="text/javascript"></script>
+    <script src="config.js" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="vendor/weathericons/css/weather-icons.css"/>
+    <link rel="stylesheet" type="text/css" href="css/custom-icons.css"/>
+    <link rel="stylesheet" type="text/css" href="css/kindle.css"/>
 
-                if (!window.console) {
-                    window.console = {
-                        log: function () {},
-                        error: function () {},
-                        warn: function () {}
-                    };
-                }
+    <script type="text/javascript">
+        var apiProtocol = window.location.protocol === 'file:' ? 'https:' : window.location.protocol;
 
-                var errorLog = [];
+        var jsonp = function () {
+            return {
+                // JSONP Request
+                request: function (src, callback, id) {
+                    try {
 
-                function report(message) {
-                    errorLog.push(message);
-                    var statusEl = null;
-                    if (elements && elements.status) {
-                        statusEl = elements.status;
-                    } else {
-                        statusEl = document.getElementById("status");
-                    }
-                    if (statusEl) {
-                        statusEl.textContent = "Error: " + message;
-                    }
-                    if (
-                        window.console &&
-                        typeof window.console.log === "function"
-                    ) {
-                        window.console.log("[error] " + message);
-                    }
-                }
+                        var self = this,
+                            script = null;
 
-                window.onerror = function (msg, src, line, col, err) {
-                    var details = msg;
-                    if (line) {
-                        details += " (" + line + ":" + (col || 0) + ")";
-                    }
-                    if (err && err.stack) {
-                        details += " " + err.stack;
-                    }
-                    report(details);
-                    return false;
-                };
+                        self.done = false;
 
-                if (
-                    window.console &&
-                    typeof window.console.error === "function"
-                ) {
-                    var originalConsoleError = window.console.error;
-                    window.console.error = function () {
-                        var args = Array.prototype.slice.call(arguments);
-                        report(args.join(" "));
-                        originalConsoleError.apply(window.console, args);
-                    };
-                }
-
-                var LATITUDE = 47.7258;
-                var LONGITUDE = -122.1649;
-                var APP_ID = "a4ca63cec93d4b0dcebe65db9a53931a";
-                var UNITS = "metric";
-                var UNIT_SYMBOL = UNITS === "imperial" ? "°F" : "°C";
-                var WIND_UNIT = UNITS === "imperial" ? "mph" : "km/h";
-                var LANGUAGE = "en";
-                var FORECAST_ITEMS = 3;
-                var REFRESH_INTERVAL = 30 * 60 * 1000;
-                var REQUEST_TIMEOUT = 15000;
-
-                var protocolCandidates = ["https:", "http:"];
-
-                var elements = {};
-                var forecastCells = [];
-                var refreshTimer = null;
-                var moonState = {
-                    sunriseLocal: null,
-                    sunsetLocal: null,
-                    latitude: null,
-                    lastTimestamp: null,
-                    lastOffset: 0
-                };
-
-                function byId(id) {
-                    return document.getElementById(id);
-                }
-
-                function pad(value) {
-                    return value < 10 ? "0" + value : "" + value;
-                }
-
-                function capitalize(text) {
-                    if (!text) {
-                        return "";
-                    }
-                    return text.charAt(0).toUpperCase() + text.slice(1);
-                }
-
-                function asRounded(value) {
-                    return typeof value === "number" && !isNaN(value)
-                        ? Math.round(value)
-                        : null;
-                }
-
-                function formatTime(timestampSeconds, offsetSeconds) {
-                    var date = new Date(
-                        (timestampSeconds + offsetSeconds) * 1000
-                    );
-                    var hours = date.getUTCHours();
-                    var suffix = hours >= 12 ? "pm" : "am";
-                    hours = hours % 12;
-                    if (hours === 0) {
-                        hours = 12;
-                    }
-                    return (
-                        hours + ":" + pad(date.getUTCMinutes()) + " " + suffix
-                    );
-                }
-
-                var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                var MONTHS = [
-                    "Jan",
-                    "Feb",
-                    "Mar",
-                    "Apr",
-                    "May",
-                    "Jun",
-                    "Jul",
-                    "Aug",
-                    "Sep",
-                    "Oct",
-                    "Nov",
-                    "Dec"
-                ];
-
-                function formatDateTime(timestampSeconds, offsetSeconds) {
-                    var date = new Date(
-                        (timestampSeconds + offsetSeconds) * 1000
-                    );
-                    var hours = date.getUTCHours();
-                    var suffix = hours >= 12 ? "pm" : "am";
-                    hours = hours % 12;
-                    if (hours === 0) {
-                        hours = 12;
-                    }
-                    return (
-                        DAYS[date.getUTCDay()] +
-                        " " +
-                        MONTHS[date.getUTCMonth()] +
-                        " " +
-                        pad(date.getUTCDate()) +
-                        " " +
-                        hours +
-                        ":" +
-                        pad(date.getUTCMinutes()) +
-                        " " +
-                        suffix
-                    );
-                }
-
-                var moonIcons = [
-                    ["wi-moon-alt-new", "wi-moon-alt-full"],
-                    ["wi-moon-alt-waxing-crescent-1", "wi-moon-alt-waning-gibbous-1"],
-                    ["wi-moon-alt-waxing-crescent-2", "wi-moon-alt-waning-gibbous-2"],
-                    ["wi-moon-alt-waxing-crescent-3", "wi-moon-alt-waning-gibbous-3"],
-                    ["wi-moon-alt-waxing-crescent-4", "wi-moon-alt-waning-gibbous-4"],
-                    ["wi-moon-alt-waxing-crescent-5", "wi-moon-alt-waning-gibbous-5"],
-                    ["wi-moon-alt-waxing-crescent-6", "wi-moon-alt-waning-gibbous-6"],
-                    ["wi-moon-alt-first-quarter", "wi-moon-alt-third-quarter"],
-                    ["wi-moon-alt-waxing-gibbous-1", "wi-moon-alt-waning-crescent-1"],
-                    ["wi-moon-alt-waxing-gibbous-2", "wi-moon-alt-waning-crescent-2"],
-                    ["wi-moon-alt-waxing-gibbous-3", "wi-moon-alt-waning-crescent-3"],
-                    ["wi-moon-alt-waxing-gibbous-4", "wi-moon-alt-waning-crescent-4"],
-                    ["wi-moon-alt-waxing-gibbous-5", "wi-moon-alt-waning-crescent-5"],
-                    ["wi-moon-alt-waxing-gibbous-6", "wi-moon-alt-waning-crescent-6"],
-                    ["wi-moon-alt-full", "wi-moon-alt-new"],
-                    ["wi-moon-alt-waning-gibbous-1", "wi-moon-alt-waxing-crescent-1"],
-                    ["wi-moon-alt-waning-gibbous-2", "wi-moon-alt-waxing-crescent-2"],
-                    ["wi-moon-alt-waning-gibbous-3", "wi-moon-alt-waxing-crescent-3"],
-                    ["wi-moon-alt-waning-gibbous-4", "wi-moon-alt-waxing-crescent-4"],
-                    ["wi-moon-alt-waning-gibbous-5", "wi-moon-alt-waxing-crescent-5"],
-                    ["wi-moon-alt-waning-gibbous-6", "wi-moon-alt-waxing-crescent-6"],
-                    ["wi-moon-alt-third-quarter", "wi-moon-alt-first-quarter"],
-                    ["wi-moon-alt-waning-crescent-1", "wi-moon-alt-waxing-gibbous-1"],
-                    ["wi-moon-alt-waning-crescent-2", "wi-moon-alt-waxing-gibbous-2"],
-                    ["wi-moon-alt-waning-crescent-3", "wi-moon-alt-waxing-gibbous-3"],
-                    ["wi-moon-alt-waning-crescent-4", "wi-moon-alt-waxing-gibbous-4"],
-                    ["wi-moon-alt-waning-crescent-5", "wi-moon-alt-waxing-gibbous-5"],
-                    ["wi-moon-alt-waning-crescent-6", "wi-moon-alt-waxing-gibbous-6"]
-                ];
-
-                function normalizeDaySeconds(value) {
-                    var mod = value % 86400;
-                    if (mod < 0) {
-                        mod += 86400;
-                    }
-                    return mod;
-                }
-
-                function getMoonPhase(year, month, day) {
-                    var lp = 2551443;
-                    var now = new Date(year, month - 1, day, 20, 35, 0);
-                    var newMoon = new Date(1970, 0, 7, 20, 35, 0);
-                    var phase =
-                        ((now.getTime() - newMoon.getTime()) / 1000) % lp;
-                    return phase / lp;
-                }
-
-                function getMoonPhaseFromDate(date) {
-                    var lp = 2551443;
-                    var newMoon = new Date(1970, 0, 7, 20, 35, 0);
-                    var phase =
-                        ((date.getTime() - newMoon.getTime()) / 1000) % lp;
-                    return phase / lp;
-                }
-
-                function getCurrentMoonPhase() {
-                    var now = new Date();
-                    return getMoonPhase(
-                        now.getFullYear(),
-                        now.getMonth() + 1,
-                        now.getDate()
-                    );
-                }
-
-                function isNightAtLocalSeconds(localSeconds) {
-                    if (
-                        moonState.sunriseLocal === null ||
-                        moonState.sunsetLocal === null
-                    ) {
-                        var phase = getCurrentMoonPhase();
-                        return phase > 0.5;
-                    }
-                    var sunrise = moonState.sunriseLocal;
-                    var sunset = moonState.sunsetLocal;
-                    if (sunrise <= sunset) {
-                        return localSeconds < sunrise || localSeconds >= sunset;
-                    }
-                    return !(localSeconds >= sunrise && localSeconds < sunset);
-                }
-
-                function applyMoonOrientation(className) {
-                    if (!elements.moonPhase) {
-                        return;
-                    }
-                    if (typeof moonState.latitude !== "number") {
-                        elements.moonPhase.style.transform = "";
-                        elements.moonPhase.style.webkitTransform = "";
-                        return;
-                    }
-                    var direction =
-                        className.indexOf("moonFirstHalf") !== -1 ? -1 : 1;
-                    var rotation = (moonState.latitude - 90) * direction;
-                    var transform = "rotate(" + rotation + "deg)";
-                    elements.moonPhase.style.transform = transform;
-                    elements.moonPhase.style.webkitTransform = transform;
-                }
-
-                function getMoonIconClasses(phase, isNightMode) {
-                    var iconInterval = 1 / moonIcons.length;
-                    var index = Math.floor(phase / iconInterval);
-                    if (index >= moonIcons.length) {
-                        index = moonIcons.length - 1;
-                    }
-                    return (
-                        "wi " +
-                        moonIcons[index][isNightMode ? 1 : 0] +
-                        " moonIcon " +
-                        (phase < 0.5 ? "moonFirstHalf" : "moonSecondHalf")
-                    );
-                }
-
-                function updateMoonPhase(timestampSeconds, offsetSeconds) {
-                    if (!elements.moonPhase) {
-                        return;
-                    }
-                    if (typeof timestampSeconds !== "number") {
-                        elements.moonPhase.textContent = "--";
-                        elements.moonPhase.className = "wi moonIcon";
-                        elements.moonPhase.style.transform = "";
-                        elements.moonPhase.style.webkitTransform = "";
-                        return;
-                    }
-                    var localDate = new Date(
-                        (timestampSeconds + offsetSeconds) * 1000
-                    );
-                    var phase = getMoonPhaseFromDate(localDate);
-                    var localSeconds = normalizeDaySeconds(
-                        timestampSeconds + offsetSeconds
-                    );
-                    var isNight = isNightAtLocalSeconds(localSeconds);
-                    var className = getMoonIconClasses(phase, isNight);
-                    elements.moonPhase.textContent = "";
-                    elements.moonPhase.className = className;
-                    applyMoonOrientation(className);
-                }
-
-                function formatDateLabel(timestampSeconds, offsetSeconds) {
-                    var date = new Date(
-                        (timestampSeconds + offsetSeconds) * 1000
-                    );
-                    return (
-                        DAYS[date.getUTCDay()] +
-                        ", " +
-                        date.getUTCDate() +
-                        " " +
-                        MONTHS[date.getUTCMonth()]
-                    );
-                }
-
-                function kmhFromMs(speed) {
-                    return Math.round(speed * 3.6);
-                }
-
-                function setStatus(message) {
-                    if (elements.status) {
-                        elements.status.textContent = message;
-                    }
-                }
-
-                function resetForecastPanel() {
-                    for (var i = 0; i < forecastCells.length; i++) {
-                        forecastCells[i].time.textContent = "--";
-                        forecastCells[i].temp.textContent = "--";
-                        forecastCells[i].desc.textContent = "";
-                    }
-                }
-
-                function initElements() {
-                    elements.temperature = byId("temperature");
-                    elements.unit = byId("unit");
-                    elements.description = byId("description");
-                    elements.feelsLike = byId("feelsLikeValue");
-                    elements.wind = byId("windValue");
-                    elements.humidity = byId("humidityValue");
-                    elements.updated = byId("updatedValue");
-                    elements.status = byId("status");
-
-                    elements.date = byId("dateValue");
-                    elements.time = byId("timeValue");
-                    elements.moonPhase = byId("moonPhaseIcon");
-                    elements.sunrise = byId("sunriseValue");
-                    elements.sunset = byId("sunsetValue");
-
-                    var i;
-                    for (i = 0; i < FORECAST_ITEMS; i++) {
-                        forecastCells.push({
-                            time: byId("forecastTime" + i),
-                            temp: byId("forecastTemp" + i),
-                            desc: byId("forecastDesc" + i)
-                        });
-                    }
-
-                    if (elements.date && !elements.date.textContent) {
-                        elements.date.textContent = "--";
-                    }
-                    if (elements.time && !elements.time.textContent) {
-                        elements.time.textContent = "--";
-                    }
-                    if (elements.moonPhase) {
-                        elements.moonPhase.textContent = "--";
-                        elements.moonPhase.className = "wi moonIcon";
-                    }
-                    if (elements.sunrise) {
-                        elements.sunrise.textContent = "--";
-                    }
-                    if (elements.sunset) {
-                        elements.sunset.textContent = "--";
-                    }
-                    if (elements.unit) {
-                        elements.unit.textContent = UNIT_SYMBOL;
-                    }
-                    resetForecastPanel();
-                }
-
-                function buildUrl(protocol, endpoint) {
-                    var url =
-                        protocol +
-                        "//api.openweathermap.org/data/2.5/" +
-                        endpoint;
-                    var params =
-                        "lat=" +
-                        LATITUDE +
-                        "&lon=" +
-                        LONGITUDE +
-                        "&appid=" +
-                        APP_ID +
-                        "&units=" +
-                        UNITS +
-                        "&lang=" +
-                        LANGUAGE;
-                    if (endpoint === "forecast") {
-                        params += "&cnt=" + FORECAST_ITEMS * 2;
-                    }
-                    return url + "?" + params;
-                }
-
-                function requestJsonp(url, onSuccess, onFailure) {
-                    var callbackName =
-                        "jsonp_cb_" +
-                        new Date().getTime() +
-                        "_" +
-                        Math.floor(Math.random() * 1000);
-                    var script = document.createElement("script");
-                    var completed = false;
-                    var timedOut = false;
-                    var timeoutId = null;
-
-                    function cleanup() {
-                        if (timeoutId !== null) {
-                            window.clearTimeout(timeoutId);
-                            timeoutId = null;
+                        if (typeof id === "undefined") {
+                            id = "jsonp";
                         }
-                        if (script && script.parentNode) {
-                            script.parentNode.removeChild(script);
+
+                        if (document.getElementById(id) !== null) {
+                            script = document.getElementById(id);
+                            document.body.removeChild(script);
                         }
-                        try {
-                            delete window[callbackName];
-                        } catch (err) {
-                            window[callbackName] = undefined;
-                        }
-                    }
 
-                    window[callbackName] = function (data) {
-                        if (timedOut) {
-                            return;
-                        }
-                        completed = true;
-                        cleanup();
-                        onSuccess(data);
-                    };
+                        script = document.createElement('script');
+                        script.type = 'application/javascript';
+                        script.id = id;
+                        script.src = src;
+                        script.onload = function () {
+                            console.log("onload");
 
-                    script.onerror = function () {
-                        if (completed) {
-                            return;
-                        }
-                        cleanup();
-                        onFailure("network");
-                    };
-
-                    var separator = url.indexOf("?") >= 0 ? "&" : "?";
-                    script.src =
-                        url +
-                        separator +
-                        "callback=" +
-                        callbackName +
-                        "&ts=" +
-                        new Date().getTime();
-                    document.body.appendChild(script);
-
-                    timeoutId = window.setTimeout(function () {
-                        timedOut = true;
-                        if (completed) {
-                            return;
-                        }
-                        cleanup();
-                        onFailure("timeout");
-                    }, REQUEST_TIMEOUT);
-                }
-
-                function updateTimePanel(data, timezoneOffset) {
-                    var hasDate = !!elements.date;
-                    var hasTime = !!elements.time;
-                    var hasMoon = !!elements.moonPhase;
-                    if (!hasDate && !hasTime && !hasMoon) {
-                        return;
-                    }
-
-                    if (data && typeof data.dt === "number") {
-                        moonState.lastTimestamp = data.dt;
-                        moonState.lastOffset = timezoneOffset;
-                        if (hasDate) {
-                            elements.date.textContent = formatDateLabel(
-                                data.dt,
-                                timezoneOffset
-                            );
-                        }
-                        if (hasTime) {
-                            elements.time.textContent = formatTime(
-                                data.dt,
-                                timezoneOffset
-                            );
-                        }
-                        if (hasMoon) {
-                            updateMoonPhase(data.dt, timezoneOffset);
-                        }
-                    } else {
-                        moonState.lastTimestamp = null;
-                        moonState.lastOffset = 0;
-                        if (hasDate) {
-                            elements.date.textContent = "--";
-                        }
-                        if (hasTime) {
-                            elements.time.textContent = "--";
-                        }
-                        if (hasMoon) {
-                            updateMoonPhase(null, 0);
-                        }
-                    }
-                }
-
-                function updateSunTimesPanel(sys, timezoneOffset) {
-                    var sunriseText = "--";
-                    var sunsetText = "--";
-                    var sunriseLocal = null;
-                    var sunsetLocal = null;
-
-                    if (sys) {
-                        if (typeof sys.sunrise === "number") {
-                            sunriseText = formatTime(
-                                sys.sunrise,
-                                timezoneOffset
-                            );
-                            sunriseLocal = normalizeDaySeconds(
-                                sys.sunrise + timezoneOffset
-                            );
-                        }
-                        if (typeof sys.sunset === "number") {
-                            sunsetText = formatTime(sys.sunset, timezoneOffset);
-                            sunsetLocal = normalizeDaySeconds(
-                                sys.sunset + timezoneOffset
-                            );
-                        }
-                    }
-
-                    moonState.sunriseLocal = sunriseLocal;
-                    moonState.sunsetLocal = sunsetLocal;
-
-                    if (elements.sunrise) {
-                        elements.sunrise.textContent = sunriseText;
-                    }
-                    if (elements.sunset) {
-                        elements.sunset.textContent = sunsetText;
-                    }
-
-                    if (moonState.lastTimestamp !== null) {
-                        updateMoonPhase(
-                            moonState.lastTimestamp,
-                            moonState.lastOffset
-                        );
-                    }
-                }
-
-                function updateWeatherPanel(data) {
-                    if (!data || !data.main || !elements.temperature) {
-                        return;
-                    }
-
-                    var tempValue = asRounded(data.main.temp);
-                    elements.temperature.textContent =
-                        tempValue !== null ? tempValue : "--";
-                    if (elements.unit) {
-                        elements.unit.textContent = UNIT_SYMBOL;
-                    }
-
-                    var descriptionText = "";
-                    if (
-                        data.weather &&
-                        data.weather.length > 0 &&
-                        data.weather[0].description
-                    ) {
-                        descriptionText = capitalize(
-                            data.weather[0].description
-                        );
-                    }
-                    if (elements.description) {
-                        elements.description.textContent = descriptionText;
-                    }
-
-                    var feelsValue = asRounded(data.main.feels_like);
-                    if (elements.feelsLike) {
-                        elements.feelsLike.textContent =
-                            feelsValue !== null
-                                ? feelsValue + UNIT_SYMBOL
-                                : "--";
-                    }
-
-                    var windDisplay = "--";
-                    if (data.wind && typeof data.wind.speed === "number") {
-                        if (UNITS === "imperial") {
-                            windDisplay =
-                                Math.round(data.wind.speed) + " " + WIND_UNIT;
-                        } else {
-                            windDisplay =
-                                kmhFromMs(data.wind.speed) + " " + WIND_UNIT;
-                        }
-                    }
-                    if (elements.wind) {
-                        elements.wind.textContent = windDisplay;
-                    }
-
-                    var humidityValue = asRounded(data.main.humidity);
-                    if (elements.humidity) {
-                        elements.humidity.textContent =
-                            humidityValue !== null ? humidityValue + "%" : "--";
-                    }
-
-                    if (
-                        data.coord &&
-                        data.coord.lat !== undefined &&
-                        data.coord.lat !== null
-                    ) {
-                        var parsedLat = parseFloat(data.coord.lat);
-                        if (!isNaN(parsedLat)) {
-                            moonState.latitude = parsedLat;
-                            applyMoonOrientation();
-                        }
-                    }
-                }
-
-                function updateForecastPanel(data) {
-                    if (!data || !data.list || !data.city) {
-                        resetForecastPanel();
-                        return;
-                    }
-                    var timezoneOffset = data.city.timezone || 0;
-                    var i;
-                    for (i = 0; i < forecastCells.length; i++) {
-                        if (i < data.list.length) {
-                            var entry = data.list[i];
-                            forecastCells[i].time.textContent = formatTime(
-                                entry.dt,
-                                timezoneOffset
-                            );
-                            var forecastTemp = asRounded(
-                                entry.main && entry.main.temp
-                            );
-                            forecastCells[i].temp.textContent =
-                                forecastTemp !== null
-                                    ? forecastTemp + UNIT_SYMBOL
-                                    : "--";
-                            var forecastDesc = "";
-                            if (
-                                entry.weather &&
-                                entry.weather.length > 0 &&
-                                entry.weather[0].main
-                            ) {
-                                forecastDesc = capitalize(
-                                    entry.weather[0].main
-                                );
+                            if (typeof callback !== "undefined") {
+                                callback(self.responseObject);
                             }
-                            forecastCells[i].desc.textContent = forecastDesc;
-                        } else {
-                            forecastCells[i].time.textContent = "--";
-                            forecastCells[i].temp.textContent = "--";
-                            forecastCells[i].desc.textContent = "";
-                        }
+
+                            script.onload = null;
+                            document.body.removeChild(script);
+                            script = null;
+                        };
+
+                        document.body.appendChild(script);
+                    } catch (exception) {
+                        console.log(exception);
+                    }
+                },
+
+                // JSONP Response
+                response: function (response) {
+                    try {
+                        this.responseObject = response;
+                    } catch (exception) {
+                        console.log(exception);
                     }
                 }
+            }
+        }();
 
-                function scheduleNext() {
-                    if (refreshTimer !== null) {
-                        window.clearTimeout(refreshTimer);
-                    }
-                    refreshTimer = window.setTimeout(
-                        refreshAll,
-                        REFRESH_INTERVAL
-                    );
-                }
 
-                function loadCurrent(protocolIndex, onSuccess, onFailure) {
-                    if (protocolIndex >= protocolCandidates.length) {
-                        onFailure(
-                            "Weather update failed (all protocols exhausted)"
-                        );
-                        return;
-                    }
-                    var protocol = protocolCandidates[protocolIndex];
-                    var url = buildUrl(protocol, "weather");
-                    requestJsonp(
-                        url,
-                        function (data) {
-                            var code =
-                                data && data.cod ? parseInt(data.cod, 10) : 0;
-                            if (!data || (code !== 200 && code !== 0)) {
-                                onFailure("Weather data unavailable");
-                                return;
-                            }
-                            var timezoneOffset =
-                                (data && data.timezone) || 0;
-                            updateTimePanel(data, timezoneOffset);
-                            updateSunTimesPanel(
-                                data ? data.sys : null,
-                                timezoneOffset
-                            );
-                            updateWeatherPanel(data);
-                            onSuccess(data);
-                        },
-                        function (reason) {
-                            if (protocolIndex + 1 < protocolCandidates.length) {
-                                setStatus("Retrying weather via HTTP...");
-                                loadCurrent(
-                                    protocolIndex + 1,
-                                    onSuccess,
-                                    onFailure
-                                );
-                            } else {
-                                onFailure(
-                                    "Weather update failed (" + reason + ")"
-                                );
-                            }
-                        }
-                    );
-                }
+        function refreshActualWeather() {
+            jsonp.request(apiProtocol + "//api.openweathermap.org/data/2.5/weather?" + _apiParams + "&callback=jsonp.response" + "&_timestamp=" + (new Date()).getTime()
+                , function (data) {
+                    processActualWeather(data);
+                }, "actual");
+        }
 
-                function loadForecast(protocolIndex, onSuccess, onFailure) {
-                    if (protocolIndex >= protocolCandidates.length) {
-                        onFailure(
-                            "Forecast update failed (all protocols exhausted)"
-                        );
-                        return;
-                    }
-                    var protocol = protocolCandidates[protocolIndex];
-                    var url = buildUrl(protocol, "forecast");
-                    requestJsonp(
-                        url,
-                        function (data) {
-                            var code =
-                                data && data.cod ? parseInt(data.cod, 10) : 0;
-                            if (!data || (code !== 200 && code !== 0)) {
-                                onFailure("Forecast data unavailable");
-                                return;
-                            }
-                            updateForecastPanel(data);
-                            onSuccess();
-                        },
-                        function (reason) {
-                            if (protocolIndex + 1 < protocolCandidates.length) {
-                                setStatus("Retrying forecast via HTTP...");
-                                loadForecast(
-                                    protocolIndex + 1,
-                                    onSuccess,
-                                    onFailure
-                                );
-                            } else {
-                                onFailure(
-                                    "Forecast update failed (" + reason + ")"
-                                );
-                            }
-                        }
-                    );
-                }
+        function refreshForecastWeather() {
+            jsonp.request(apiProtocol + "//api.openweathermap.org/data/2.5/forecast?" + _apiParams + "&callback=jsonp.response" + "&_timestamp=" + (new Date()).getTime()
+                , function (data) {
+                    processForecastWeather(data);
+                }, "forecast");
+        }
 
-                function refreshAll() {
-                    if (refreshTimer !== null) {
-                        window.clearTimeout(refreshTimer);
-                        refreshTimer = null;
-                    }
-                    setStatus("Updating weather...");
-                    var outstanding = 2;
-                    var successCount = 0;
-                    var latestWeatherData = null;
-                    var messageLocked = false;
+        function refreshData() {
+            setNightMode();
+            refreshActualWeather();
+            refreshForecastWeather();
 
-                    function markDone(success) {
-                        outstanding -= 1;
-                        if (success) {
-                            successCount += 1;
-                        }
-                        if (outstanding <= 0) {
-                            if (successCount === 2 && latestWeatherData) {
-                                var stamp = formatDateTime(
-                                    latestWeatherData.dt,
-                                    latestWeatherData.timezone || 0
-                                );
-                                elements.updated.textContent = stamp;
-                                setStatus("Updated " + stamp);
-                            }
-                            scheduleNext();
-                        }
-                    }
+            window.setTimeout("refreshData()", refreshTime);
+        }
 
-                    loadCurrent(
-                        0,
-                        function (data) {
-                            latestWeatherData = data;
-                            markDone(true);
-                        },
-                        function (message) {
-                            if (!messageLocked) {
-                                setStatus(message);
-                                messageLocked = true;
-                            }
-                            markDone(false);
-                        }
-                    );
+        function processForecastWeather(data) {
+            dataTimeZone = data.city.timezone
 
-                    loadForecast(
-                        0,
-                        function () {
-                            markDone(true);
-                        },
-                        function (message) {
-                            if (!messageLocked) {
-                                setStatus(message);
-                                messageLocked = true;
-                            }
-                            resetForecastPanel();
-                            markDone(false);
-                        }
-                    );
-                }
+            for (var i = 0; i < forecastCount; i++) {
+                var forecast = data.list[i];
 
-                window.addEventListener("load", function () {
-                    initElements();
-                    setStatus("Updating weather...");
-                    refreshAll();
+                var feelsLike = tempType == "feelsLike";
+
+                forecastsCells[i].temp.innerHTML = (feelsLike ? Math.round(forecast.main.feels_like) : Math.round(forecast.main.temp)) + unitsSymbolHtml;
+                forecastsCells[i].icon.className = getIconClassName(forecast.weather[0], new Date(forecast.dt * 1000));
+                forecastsCells[i].desc.innerHTML = forecast.weather[0].description;
+                forecastsCells[i].time.innerHTML = momentWithCorrectUtcOffset(new Date(forecast.dt * 1000)).format(timeFormat);
+                forecastsCells[i].temp.className = feelsLike ? "colTemp feelsLike" : "colTemp";
+                forecastsCells[i].icon.style.transform = null;
+                forecastsCells[i].icon.style.webkitTransform = null;
+            }
+
+            setMoonIconsRotation(data.city.coord.lat)
+        }
+
+        function getIconClassName(weather, date) {
+            var isNight = weather.icon.slice(-1) === "n";
+            if (isNight && weather.id == 800) {
+                // Night clear -> real moon phase icon.
+                var phase = getMoonPhaseFromDate(date);
+                var icon = getMoonIconClasses(phase, isNightMode());
+                return icon;
+            }
+
+            return "wi wi-owm-" + (isNight ? "night-" : "day-") + weather.id;
+        }
+
+        function setsUnitsSymbolFromApiUrl(url) {
+            if (url.indexOf("units=metric") >= 0) {
+                unitsSymbolHtml = "<i class='wi wi-celsius'></i>";
+                return
+            }
+
+            if (url.indexOf("units=imperial") >= 0) {
+                unitsSymbolHtml = "<i class='wi wi-fahrenheit'></i>";
+                return
+            }
+
+            unitsSymbolHtml = "<span>K</span>";
+            return
+        }
+
+        function getApiParams() {
+            if (getUrlParameter("api_params")) {
+                var url = getUrlParameter("api_params");
+                setsUnitsSymbolFromApiUrl(url)
+                return url;
+            }
+
+            if (api_params) {
+                var url = api_params;
+                setsUnitsSymbolFromApiUrl(url)
+                return url;
+            }
+
+            var appId = getUrlParameter("appId") ? getUrlParameter("appId") : api_appId;
+            lang = getUrlParameter("lang") ? getUrlParameter("lang") : api_lang;
+            if (typeof(lang) === 'string') {
+                lang = lang.split(";", 1)
+            }
+            var units = getUrlParameter("units") ? getUrlParameter("units") : api_units;
+
+            var locParams = api_locParams;
+            if (getUrlParameter("city")) {
+                locParams = "q=" + encodeURIComponent(getUrlParameter("city"));
+            } else if (getUrlParameter("lat") && getUrlParameter("lon")) {
+                locParams = "lat=" + encodeURIComponent(getUrlParameter("lat")) + "&lon=" + encodeURIComponent(getUrlParameter("lon"));
+            }
+
+            if (!locParams || !appId) {
+                return null;
+            }
+
+            var url = "";
+            if (locParams) {
+                url += locParams;
+            }
+            if (appId) {
+                url += "&appid=" + appId;
+            }
+            if (lang) {
+                url += "&lang=" + lang;
+            }
+            if (units) {
+                url += "&units=" + units;
+            }
+
+            setsUnitsSymbolFromApiUrl(url)
+            return url;
+        }
+
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + RegExp.escape(name) + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            if (!results) return null;
+            if (!results[1]) return '';
+            return decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+
+        RegExp.escape = function (s) {
+            return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        };
+
+        function processActualWeather(data) {
+            dataTimeZone = data.timezone
+
+            var feelsLike = tempType == "feelsLike";
+            icon.className = getIconClassName(data.weather[0], new Date(data.dt * 1000));
+            icon.style.transform = null;
+            icon.style.webkitTransform = null;
+            temp.innerHTML = feelsLike ? Math.round(data.main.feels_like) : Math.round(data.main.temp);
+            temp.className = feelsLike ? "feelsLike" : "";
+            if (description) {
+                description.innerHTML = data.weather[0].description;
+            }
+            if (lastUpdate) {
+                var refreshedAt = momentWithCorrectUtcOffset(new Date()).format(timeFormat);
+                lastUpdate.innerHTML = "Last refreshed: " + refreshedAt;
+            }
+            var sunrise = momentWithCorrectUtcOffset(new Date(data.sys.sunrise * 1000));
+            var sunset = momentWithCorrectUtcOffset(new Date(data.sys.sunset * 1000));
+
+            _sunriseHour = sunrise.hour();
+            _sunsetHour = sunset.hour();
+
+            updateTopSection();
+
+            sun.innerHTML = "<i class='wi wi-sunrise'></i> " + sunrise.format(timeFormat)
+                    + "&nbsp;&nbsp;<i class='wi wi-sunset'></i> " + sunset.format(timeFormat);
+            //  alert(data.name);
+            setNightMode();
+            setMoonIconsRotation(data.coord.lat)
+        }
+
+        /**
+         * http://www.ben-daglish.net/moon.shtml
+         * @param year
+         * @param month
+         * @param day
+         * @returns {number} They all return a single value - the phase day (0 to 1, where 0=new moon, 0.5=full etc.) for the selected date.
+         * @constructor
+         */
+        function getMoonPhase(year, month, day) {
+            var lp = 2551443;
+            var now = new Date(year, month - 1, day, 20, 35, 0);
+            var new_moon = new Date(1970, 0, 7, 20, 35, 0);
+            var phase = ((now.getTime() - new_moon.getTime()) / 1000) % lp;
+            return phase / lp;
+        }
+
+        function getMoonPhaseFromDate(date) {
+            var lp = 2551443;
+            var new_moon = new Date(1970, 0, 7, 20, 35, 0);
+            var phase = ((date.getTime() - new_moon.getTime()) / 1000) % lp;
+            return phase / lp;
+        }
+
+        /**
+         * @return {number} They all return a single value - the phase day (0 to 1, where 0=new moon, 0.5=full etc.) for the selected date.
+         */
+        function getCurrentMoonPhase() {
+            var now = new Date();
+            return getMoonPhase(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        }
+
+        function getMoonPhaseName(phase) {
+            if (phase < 0.0625 || phase >= 0.9375) {
+                return "New Moon";
+            } else if (phase < 0.1875) {
+                return "Waxing Crescent";
+            } else if (phase < 0.3125) {
+                return "First Quarter";
+            } else if (phase < 0.4375) {
+                return "Waxing Gibbous";
+            } else if (phase < 0.5625) {
+                return "Full Moon";
+            } else if (phase < 0.6875) {
+                return "Waning Gibbous";
+            } else if (phase < 0.8125) {
+                return "Last Quarter";
+            } else {
+                return "Waning Crescent";
+            }
+        }
+
+        function updateTopSection() {
+            if (!moonphaseDate && !currentTimeElement && !moonphaseIcon) {
+                return;
+            }
+
+            var now = new Date();
+            var currentMoment = momentWithCorrectUtcOffset(now);
+
+            var phase = null;
+            if (moonphaseDate || moonphaseIcon) {
+                phase = getMoonPhase(now.getFullYear(), now.getMonth() + 1, now.getDate());
+            }
+
+            if (moonphaseDate) {
+                moonphaseDate.innerHTML = currentMoment.format("ddd, MMM DD");
+            }
+
+            if (moonphaseIcon && phase !== null) {
+                moonphaseIcon.className = getMoonIconClasses(phase, isNightMode());
+            }
+
+            if (currentTimeElement) {
+                currentTimeElement.innerHTML = currentMoment.format("h:mm");
+            }
+        }
+
+        function startTopSectionTimer() {
+            if (topSectionTimerId !== null) {
+                return;
+            }
+
+            topSectionTimerId = window.setInterval(updateTopSection, 60000);
+        }
+
+        function getMoonIconClasses(phase, isNightMode) {
+            var iconInterval = 1 / moonIcons.length;
+            var index = Math.floor(phase / iconInterval)
+
+            return "wi " + moonIcons[index][isNightMode ? 1 : 0] + " moonIcon " + (phase < 0.5 ? "moonFirstHalf" : "moonSecondHalf");
+        }
+
+        function setMoonIconsRotation(latitude) {
+            var rotation = (latitude - 90)
+            var elements = document.getElementsByClassName("moonIcon")
+
+            for (var i = 0; i < elements.length; i++) {
+                var direction = elements[i].className.indexOf("moonFirstHalf") !== -1 ? -1 : 1 
+                var transform = "rotate(" + (rotation * direction) + "deg)"
+                elements[i].style.transform = transform;
+                elements[i].style.webkitTransform = transform;
+            }
+        }
+
+        var cleaner = null;
+        var page = null;
+        var temp = null;
+        var icon = null;
+        var city = null;
+        var moonphaseDate = null;
+        var moonphaseIcon = null;
+        var currentTimeElement = null;
+        var description = null;
+        var lastUpdate = null;
+        var sun = null;
+        var lang = null;
+
+        var forecastsCells = null;
+
+        var forecastCount = 5;
+        var forcedRotation = false;
+
+        var unitsSymbolHtml = "";
+        var topSectionTimerId = null;
+
+        // [normal, night]
+        var moonIcons = [
+            ["wi-moon-alt-new", "wi-moon-alt-full"],
+            ["wi-moon-alt-waxing-crescent-1","wi-moon-alt-waning-gibbous-1"],
+            ["wi-moon-alt-waxing-crescent-2","wi-moon-alt-waning-gibbous-2"],
+            ["wi-moon-alt-waxing-crescent-3","wi-moon-alt-waning-gibbous-3"],
+            ["wi-moon-alt-waxing-crescent-4","wi-moon-alt-waning-gibbous-4"],
+            ["wi-moon-alt-waxing-crescent-5","wi-moon-alt-waning-gibbous-5"],
+            ["wi-moon-alt-waxing-crescent-6","wi-moon-alt-waning-gibbous-6"],
+            ["wi-moon-alt-first-quarter","wi-moon-alt-third-quarter"],
+            ["wi-moon-alt-waxing-gibbous-1","wi-moon-alt-waning-crescent-1"],
+            ["wi-moon-alt-waxing-gibbous-2","wi-moon-alt-waning-crescent-2"],
+            ["wi-moon-alt-waxing-gibbous-3","wi-moon-alt-waning-crescent-3"],
+            ["wi-moon-alt-waxing-gibbous-4","wi-moon-alt-waning-crescent-4"],
+            ["wi-moon-alt-waxing-gibbous-5","wi-moon-alt-waning-crescent-5"],
+            ["wi-moon-alt-waxing-gibbous-6","wi-moon-alt-waning-crescent-6"],
+            ["wi-moon-alt-full","wi-moon-alt-new"],
+            ["wi-moon-alt-waning-gibbous-1","wi-moon-alt-waxing-crescent-1"],
+            ["wi-moon-alt-waning-gibbous-2","wi-moon-alt-waxing-crescent-2"],
+            ["wi-moon-alt-waning-gibbous-3","wi-moon-alt-waxing-crescent-3"],
+            ["wi-moon-alt-waning-gibbous-4","wi-moon-alt-waxing-crescent-4"],
+            ["wi-moon-alt-waning-gibbous-5","wi-moon-alt-waxing-crescent-5"],
+            ["wi-moon-alt-waning-gibbous-6","wi-moon-alt-waxing-crescent-6"],
+            ["wi-moon-alt-third-quarter","wi-moon-alt-first-quarter"],
+            ["wi-moon-alt-waning-crescent-1","wi-moon-alt-waxing-gibbous-1"],
+            ["wi-moon-alt-waning-crescent-2","wi-moon-alt-waxing-gibbous-2"],
+            ["wi-moon-alt-waning-crescent-3","wi-moon-alt-waxing-gibbous-3"],
+            ["wi-moon-alt-waning-crescent-4","wi-moon-alt-waxing-gibbous-4"],
+            ["wi-moon-alt-waning-crescent-5","wi-moon-alt-waxing-gibbous-5"],
+            ["wi-moon-alt-waning-crescent-6","wi-moon-alt-waxing-gibbous-6"],
+        ];
+
+        var timeFormat = "HH:mm";
+
+        // Config parameters.
+        var api_params, api_appId, api_lang, api_units, api_locParams, rotation, night_mode, refreshTime, utcOffset, tempType;
+
+        utcOffset = getUrlParameter("utcOffset") ? getUrlParameter("utcOffset") : utcOffset;
+        tempType = getUrlParameter("tempType") ? getUrlParameter("tempType") : tempType;
+
+        var dataTimeZone = 0;
+
+        // For night mode.
+        var _sunsetHour = 18;
+        var _sunriseHour = 6;
+
+        var _apiParams = null;
+
+        if (!refreshTime) {
+            refreshTime = 30 * 60 * 1000;
+        }
+
+        function rotate() {
+            var rot = getUrlParameter("rotation") ? getUrlParameter("rotation") : rotation;
+
+            var v = viewport();
+            var isPortrait = v.height > v.width;
+
+            if (isPortrait && rot === "ll") {
+                // landscape left
+                page.className = "landscape";
+                forcedRotation = true;
+
+                page.style.transform = "rotate(90deg)";
+                page.style.transformOrigin = "bottom left";
+                page.style.webkitTransform = "rotate(90deg)";
+                page.style.webkitTransformOrigin = "bottom left";
+                page.style.position = "absolute";
+                page.style.top = -v.width + "px";
+
+                page.style.height = v.width + "px";
+                page.style.width = v.height + "px";
+            } else if (isPortrait && rot === "lr") {
+                // landscape right
+                page.className = "landscape";
+                forcedRotation = true;
+
+                page.style.transform = "rotate(-90deg)";
+                page.style.transformOrigin = "bottom right";
+                page.style.webkitTransform = "rotate(-90deg)";
+                page.style.webkitTransformOrigin = "top left";
+                page.style.position = "absolute";
+                page.style.top = v.height + "px";
+
+                page.style.height = v.width + "px";
+                page.style.width = v.height + "px";
+            } else if (rot === "up") {
+                // upside down
+                page.className = isPortrait ? "portrait" : "landscape";
+                forcedRotation = false;
+
+                page.style.transform = "rotate(180deg)";
+                page.style.transformOrigin = "50% 50% 0";
+                page.style.webkitTransform = "rotate(180deg)";
+                page.style.webkitTransformOrigin = "50% 50% 0";
+            } else {
+                // reset css:
+                page.className = isPortrait ? "portrait" : "landscape";
+                forcedRotation = false;
+
+                page.style.transform = "";
+                page.style.transformOrigin = "";
+                page.style.webkitTransform = "";
+                page.style.webkitTransformOrigin = "";
+                page.style.position = "";
+                page.style.top = "";
+                page.style.background = "";
+
+                page.style.height = "";
+                page.style.width = "";
+            }
+        }
+
+        window.addEventListener('load', function () {
+            console.log("load");
+
+            _apiParams = getApiParams();
+            if (_apiParams === null) {
+                window.location = "config.html";
+            }
+
+            moment.locale(momentLocale());
+
+            cleaner = document.getElementById("cleaner");
+
+            page = document.getElementById("page");
+            temp = document.getElementById("temp");
+            icon = document.getElementById("icon");
+
+            city = document.getElementById("city");
+            moonphaseDate = document.getElementById("moonphaseDate");
+            moonphaseIcon = document.getElementById("moonphaseIcon");
+            currentTimeElement = document.getElementById("currentTime");
+            startTopSectionTimer();
+            updateTopSection();
+            city.addEventListener('click', function (event) {
+                event.preventDefault();
+                window.location.href = window.location.href.replace("/index.html", "/config.html");
+                return false
+            });
+            temp.addEventListener('click', function (event) {
+                event.preventDefault();
+                var newHref = window.location.href.replace(/[&?]tempType=[^&]*/, "");
+                newHref = newHref + (newHref.indexOf("?") >= 0 ? "&" : "?") + "tempType=" + (tempType === "feelsLike" ? "actual" : "feelsLike")
+                window.location.href = newHref
+                return false
+            });
+            description = document.getElementById("description");
+            lastUpdate = document.getElementById("lastUpdate");
+            sun = document.getElementById("sun");
+
+            forecastsCells = [];
+            for (var i = 0; i < forecastCount; i++) {
+                forecastsCells.push({
+                    temp: document.getElementById("temp" + (i + 1)),
+                    icon: document.getElementById("icon" + (i + 1)),
+                    desc: document.getElementById("desc" + (i + 1)),
+                    time: document.getElementById("time" + (i + 1)),
                 });
-            })();
-        </script>
-    </head>
-    <body>
-        <div id="app">
-            <div id="mainPanel">
-                <div id="topRow">
-                    <i id="moonPhaseIcon" class="moonIcon wi">--</i>
-                    <div id="temperatureWrapper">
-                        <span id="temperature">--</span>
-                        <span id="unit">°C</span>
-                    </div>
-                </div>
-                <div id="dateValue" class="date-display">--</div>
-                <div id="timeValue" class="time-display">--</div>
-            </div>
-            <div id="bottomPanel">
-                <div id="forecast">
-                    <div class="forecast-item">
-                        <div id="forecastTime0" class="forecast-time">--</div>
-                        <div id="forecastTemp0" class="forecast-temp">--</div>
-                        <div id="forecastDesc0" class="forecast-desc"></div>
-                    </div>
-                    <div class="forecast-item">
-                        <div id="forecastTime1" class="forecast-time">--</div>
-                        <div id="forecastTemp1" class="forecast-temp">--</div>
-                        <div id="forecastDesc1" class="forecast-desc"></div>
-                    </div>
-                    <div class="forecast-item">
-                        <div id="forecastTime2" class="forecast-time">--</div>
-                        <div id="forecastTemp2" class="forecast-temp">--</div>
-                        <div id="forecastDesc2" class="forecast-desc"></div>
-                    </div>
-                </div>
-            </div>
-            <div id="footer">
-                <div id="updatedInfo">
-                    Updated <span id="updatedValue">--</span>
-                </div>
-                <div id="status">Loading...</div>
-            </div>
+            }
+
+            refreshData();
+
+            rotate();
+            setRem("load");
+            setNightMode();
+
+            // Set Cleanup for 4am
+            var now = new Date();
+            var cleanTime = (new Date()).setHours(4,0,0);
+            var diff = cleanTime - now;
+            if (diff < 0) {
+                diff += 86400000;
+            }
+            window.setTimeout("clearScreen()", diff);
+        });
+
+        window.addEventListener("resize", function() {
+            rotate();
+            setRem("resize");
+        });
+
+        // Simulating vh an vw with rem: http://stackoverflow.com/questions/13948713/is-there-any-cross-browser-javascript-for-making-vh-and-vw-units-work
+        // But kindle 4 doesn't support rem (so all sizes are fixed fallback for kindle 4)
+        // Kindle 4 viewport: 600x706 (landscape 800x506) (in window.load event, window.resize event is not called)
+        // Paperwhite 3 viewport: 1072x1268 (in window.load event it is 0x0, in window.resized
+        function viewport() {
+            var e = window, a = 'inner';
+            if (!('innerWidth' in window )) {
+                a = 'client';
+                e = document.documentElement || document.body;
+            }
+            return { width : e[ a+'Width' ] , height : e[ a+'Height' ] };
+        }
+
+        function setRem(prefix) {
+            var v = viewport();
+            var root = document.querySelector(":root");
+            root.style.fontSize = ((forcedRotation === false ? v.height : v.width) / 100) + "px";
+           // console.log("setting root font size to: " + v.height)
+          //  alert(prefix + " viewport:" + v.width + "x" + v.height);
+        }
+
+        function setNightMode() {
+            var root = document.querySelector(":root");
+            if (isNightMode()) {
+                root.className = "night";
+            } else {
+                root.className = null;
+            }
+        }
+
+        function isNightMode() {
+            var mode = getUrlParameter("night") ? getUrlParameter("night") : night_mode;
+            if (mode === "on") {
+                return true;
+            }
+
+            if (mode === "auto") {
+                return isNight(_sunsetHour, _sunriseHour);
+            }
+
+            var found = mode && mode.match(/([0-9][0-9]?)-([0-9][0-9]?)/);
+
+            if (found) {
+                return isNight(found[1], found[2]);
+            }
+
+            return false;
+        }
+
+        function isNight(f, t) {
+            var from = parseInt(f);
+            var to = parseInt(t);
+
+            var now = momentWithCorrectUtcOffset(new Date()).hour();
+
+            if (from > to) {
+                return from <= now || to > now;
+            } else {
+                return from <= now && to > now;
+            }
+        }
+
+        function momentLocale() {
+            var lang = getUrlParameter("lang") ? getUrlParameter("lang") : api_lang;
+            if (typeof(lang) === 'string') {
+                var langs = lang.split(";", 2)
+                return langs.length > 1 ? langs[1] : langs[0];
+            } else {
+                return null;
+            }
+        }
+
+        function clearScreen(times) {
+            if (typeof(times) == 'undefined') {
+                times = 5;
+            }
+
+            if (times <= 0) {
+                cleaner.style.display = 'none';
+                window.setTimeout("clearScreen()", 86400000);
+                return;
+            }
+
+            cleaner.style.display = 'block';
+            cleaner.style.background = times % 2 == 0 ? "#ffffff" : "#000000";
+            window.setTimeout(function () {
+                clearScreen(times - 1);
+            }, 500);
+        }
+
+        function momentWithCorrectUtcOffset(dateTime) {
+            // Default is auto
+            if (typeof(utcOffset) === 'undefined' || utcOffset === null || utcOffset === "") {
+                return moment(dateTime).utcOffset(dataTimeZone / 60, false)
+            } else if (utcOffset === 'local') {
+                return moment(dateTime);
+            } else {
+                return moment(dateTime).utcOffset(utcOffset, false);
+            }
+        }
+
+    </script>
+
+</head>
+
+
+<body>
+<div id="page">
+    <a id="city" href="./config.html">
+        <span id="moonphaseLine">
+            <i id="moonphaseIcon"></i>
+            <span id="moonphaseDate"></span>
+        </span>
+        <span id="currentTime"></span>
+        <span id="sun"></span>
+    </a>
+    <div id="iconWrapper"><i id="icon"></i></div>
+    <div class="tempWrapper">
+        <div id="temp"></div>
+        <!--<i class="celsius wi wi-celsius"></i>-->
+    </div>
+    <div class="forecast">
+        <div class="col col1">
+            <div id="time1" class="colTime"></div>
+            <div class="forecastIconWrapper"><i id="icon1" class="colIcon"></i></div>
+            <div id="temp1" class="colTemp"></div>
+            <div id="desc1" class="colDesc"></div>
         </div>
-    </body>
+        <div class="col col2">
+            <div id="time2" class="colTime"></div>
+            <div class="forecastIconWrapper"><i id="icon2" class="colIcon"></i></div>
+            <div id="temp2" class="colTemp"></div>
+            <div id="desc2" class="colDesc"></div>
+        </div>
+        <div class="col col3">
+            <div id="time3" class="colTime"></div>
+            <div class="forecastIconWrapper"><i id="icon3" class="colIcon"></i></div>
+            <div id="temp3" class="colTemp"></div>
+            <div id="desc3" class="colDesc"></div>
+        </div>
+        <div class="col col4">
+            <div id="time4" class="colTime"></div>
+            <div class="forecastIconWrapper"><i id="icon4" class="colIcon"></i></div>
+            <div id="temp4" class="colTemp"></div>
+            <div id="desc4" class="colDesc"></div>
+        </div>
+        <div class="col col5">
+            <div id="time5" class="colTime"></div>
+            <div class="forecastIconWrapper"><i id="icon5" class="colIcon"></i></div>
+            <div id="temp5" class="colTemp"></div>
+            <div id="desc5" class="colDesc"></div>
+        </div>
+    </div>
+    <div id="lastUpdate"></div>
+</div>
+<div id="cleaner"></div>
+</body>
 </html>
