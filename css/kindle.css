@@ -220,11 +220,13 @@ html.night {
 .landscape #moonphaseDate {
     font-size: 15.5px;
     font-size: 6rem;
+    font-weight: 400;
 }
 
 .landscape #currentTime {
     font-size: 35.4px;
     font-size: 24rem;
+    font-weight: 500;
 }
 
 .landscape #temp {
