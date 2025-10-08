@@ -183,7 +183,7 @@
                     }
                 }
 
-                function setForecastPlaceholders() {
+                function resetForecastPanel() {
                     for (var i = 0; i < forecastCells.length; i++) {
                         forecastCells[i].time.textContent = "--";
                         forecastCells[i].temp.textContent = "--";
@@ -321,7 +321,7 @@
                     if (elements.unit) {
                         elements.unit.textContent = UNIT_SYMBOL;
                     }
-                    setForecastPlaceholders();
+                    resetForecastPanel();
                 }
 
                 function buildUrl(protocol, endpoint) {
@@ -409,32 +409,67 @@
                     }, REQUEST_TIMEOUT);
                 }
 
-                function updateCurrentUI(data) {
-                    if (!data || !data.main) {
+                function updateTimePanel(data, timezoneOffset) {
+                    if (!elements.location || !elements.date || !elements.time) {
                         return;
                     }
-                    if (elements.location && data.name) {
-                        elements.location.textContent = data.name;
-                    }
 
-                    var timezoneOffset = data.timezone || 0;
-                    if (elements.date) {
+                    var locationText = LOCATION_NAME;
+                    if (data && data.name) {
+                        locationText = data.name;
+                    }
+                    elements.location.textContent = locationText;
+
+                    if (data && typeof data.dt === "number") {
                         elements.date.textContent = formatDateLabel(
                             data.dt,
                             timezoneOffset,
                         );
-                    }
-                    if (elements.time) {
                         elements.time.textContent = formatTime(
                             data.dt,
                             timezoneOffset,
                         );
+                    } else {
+                        elements.date.textContent = "--";
+                        elements.time.textContent = "--";
+                    }
+                }
+
+                function updateSunTimesPanel(sys, timezoneOffset) {
+                    if (!elements.sunrise || !elements.sunset) {
+                        return;
+                    }
+
+                    var sunriseText = "--";
+                    var sunsetText = "--";
+
+                    if (sys) {
+                        if (typeof sys.sunrise === "number") {
+                            sunriseText = formatTime(
+                                sys.sunrise,
+                                timezoneOffset,
+                            );
+                        }
+                        if (typeof sys.sunset === "number") {
+                            sunsetText = formatTime(sys.sunset, timezoneOffset);
+                        }
+                    }
+
+                    elements.sunrise.textContent = sunriseText;
+                    elements.sunset.textContent = sunsetText;
+                }
+
+                function updateWeatherPanel(data) {
+                    if (!data || !data.main || !elements.temperature) {
+                        return;
                     }
 
                     var tempValue = asRounded(data.main.temp);
                     elements.temperature.textContent =
                         tempValue !== null ? tempValue : "--";
-                    elements.unit.textContent = UNIT_SYMBOL;
+                    if (elements.unit) {
+                        elements.unit.textContent = UNIT_SYMBOL;
+                    }
 
                     var descriptionText = "";
                     if (
@@ -446,11 +481,17 @@
                             data.weather[0].description,
                         );
                     }
-                    elements.description.textContent = descriptionText;
+                    if (elements.description) {
+                        elements.description.textContent = descriptionText;
+                    }
 
                     var feelsValue = asRounded(data.main.feels_like);
-                    elements.feelsLike.textContent =
-                        feelsValue !== null ? feelsValue + UNIT_SYMBOL : "--";
+                    if (elements.feelsLike) {
+                        elements.feelsLike.textContent =
+                            feelsValue !== null
+                                ? feelsValue + UNIT_SYMBOL
+                                : "--";
+                    }
 
                     var windDisplay = "--";
                     if (data.wind && typeof data.wind.speed === "number") {
@@ -462,27 +503,20 @@
                                 kmhFromMs(data.wind.speed) + " " + WIND_UNIT;
                         }
                     }
-                    elements.wind.textContent = windDisplay;
+                    if (elements.wind) {
+                        elements.wind.textContent = windDisplay;
+                    }
 
                     var humidityValue = asRounded(data.main.humidity);
-                    elements.humidity.textContent =
-                        humidityValue !== null ? humidityValue + "%" : "--";
-
-                    if (data.sys) {
-                        elements.sunrise.textContent =
-                            typeof data.sys.sunrise === "number"
-                                ? formatTime(data.sys.sunrise, timezoneOffset)
-                                : "--";
-                        elements.sunset.textContent =
-                            typeof data.sys.sunset === "number"
-                                ? formatTime(data.sys.sunset, timezoneOffset)
-                                : "--";
+                    if (elements.humidity) {
+                        elements.humidity.textContent =
+                            humidityValue !== null ? humidityValue + "%" : "--";
                     }
                 }
 
-                function updateForecastUI(data) {
+                function updateForecastPanel(data) {
                     if (!data || !data.list || !data.city) {
-                        setForecastPlaceholders();
+                        resetForecastPanel();
                         return;
                     }
                     var timezoneOffset = data.city.timezone || 0;
@@ -548,7 +582,14 @@
                                 onFailure("Weather data unavailable");
                                 return;
                             }
-                            updateCurrentUI(data);
+                            var timezoneOffset =
+                                (data && data.timezone) || 0;
+                            updateTimePanel(data, timezoneOffset);
+                            updateSunTimesPanel(
+                                data ? data.sys : null,
+                                timezoneOffset,
+                            );
+                            updateWeatherPanel(data);
                             onSuccess(data);
                         },
                         function (reason) {
@@ -586,7 +627,7 @@
                                 onFailure("Forecast data unavailable");
                                 return;
                             }
-                            updateForecastUI(data);
+                            updateForecastPanel(data);
                             onSuccess();
                         },
                         function (reason) {
@@ -660,7 +701,7 @@
                                 setStatus(message);
                                 messageLocked = true;
                             }
-                            setForecastPlaceholders();
+                            resetForecastPanel();
                             markDone(false);
                         },
                     );
