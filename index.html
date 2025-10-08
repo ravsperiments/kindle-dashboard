@@ -20,6 +20,51 @@
                     };
                 }
 
+                var errorLog = [];
+
+                function report(message) {
+                    errorLog.push(message);
+                    var statusEl = null;
+                    if (elements && elements.status) {
+                        statusEl = elements.status;
+                    } else {
+                        statusEl = document.getElementById("status");
+                    }
+                    if (statusEl) {
+                        statusEl.textContent = "Error: " + message;
+                    }
+                    if (
+                        window.console &&
+                        typeof window.console.log === "function"
+                    ) {
+                        window.console.log("[error] " + message);
+                    }
+                }
+
+                window.onerror = function (msg, src, line, col, err) {
+                    var details = msg;
+                    if (line) {
+                        details += " (" + line + ":" + (col || 0) + ")";
+                    }
+                    if (err && err.stack) {
+                        details += " " + err.stack;
+                    }
+                    report(details);
+                    return false;
+                };
+
+                if (
+                    window.console &&
+                    typeof window.console.error === "function"
+                ) {
+                    var originalConsoleError = window.console.error;
+                    window.console.error = function () {
+                        var args = Array.prototype.slice.call(arguments);
+                        report(args.join(" "));
+                        originalConsoleError.apply(window.console, args);
+                    };
+                }
+
                 var LATITUDE = 47.7258;
                 var LONGITUDE = -122.1649;
                 var LOCATION_NAME = "Redmond, WA";
@@ -69,18 +114,12 @@
                     if (hours === 0) {
                         hours = 12;
                     }
-                    return hours + ":" + pad(date.getUTCMinutes()) + " " + suffix;
+                    return (
+                        hours + ":" + pad(date.getUTCMinutes()) + " " + suffix
+                    );
                 }
 
-                var DAYS = [
-                    "Sun",
-                    "Mon",
-                    "Tue",
-                    "Wed",
-                    "Thu",
-                    "Fri",
-                    "Sat",
-                ];
+                var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
                 var MONTHS = [
                     "Jan",
                     "Feb",
@@ -152,20 +191,108 @@
                     }
                 }
 
+                function ensureElement(parent, id, tagName, className, text) {
+                    var existing = byId(id);
+                    if (existing) {
+                        return existing;
+                    }
+                    if (!parent) {
+                        return null;
+                    }
+                    var el = document.createElement(tagName || "div");
+                    el.id = id;
+                    if (className) {
+                        el.className = className;
+                    }
+                    if (typeof text === "string") {
+                        el.textContent = text;
+                    }
+                    parent.appendChild(el);
+                    return el;
+                }
+
+                function ensureSunEntry(container, valueId, labelText) {
+                    var valueEl = byId(valueId);
+                    if (valueEl) {
+                        return valueEl;
+                    }
+                    if (!container) {
+                        return null;
+                    }
+                    var entry = document.createElement("div");
+                    entry.className = "sun-entry";
+
+                    var label = document.createElement("span");
+                    label.className = "detail-label";
+                    label.textContent = labelText + ":";
+                    entry.appendChild(label);
+
+                    var value = document.createElement("span");
+                    value.id = valueId;
+                    value.textContent = "--";
+                    entry.appendChild(value);
+
+                    container.appendChild(entry);
+                    return value;
+                }
+
                 function initElements() {
-                    elements.location = byId("location");
-                    elements.date = byId("dateValue");
-                    elements.time = byId("timeValue");
+                    var timePanel = byId("timePanel");
+
                     elements.temperature = byId("temperature");
                     elements.unit = byId("unit");
                     elements.description = byId("description");
                     elements.feelsLike = byId("feelsLikeValue");
                     elements.wind = byId("windValue");
                     elements.humidity = byId("humidityValue");
-                    elements.sunrise = byId("sunriseValue");
-                    elements.sunset = byId("sunsetValue");
                     elements.updated = byId("updatedValue");
                     elements.status = byId("status");
+
+                    elements.location = byId("location");
+                    elements.date = byId("dateValue");
+                    elements.time = byId("timeValue");
+                    elements.sunrise = byId("sunriseValue");
+                    elements.sunset = byId("sunsetValue");
+
+                    if (timePanel) {
+                        elements.location = ensureElement(
+                            timePanel,
+                            "location",
+                            "div",
+                            "location",
+                        );
+                        elements.date = ensureElement(
+                            timePanel,
+                            "dateValue",
+                            "div",
+                            "date-display",
+                            "--",
+                        );
+                        elements.time = ensureElement(
+                            timePanel,
+                            "timeValue",
+                            "div",
+                            "time-display",
+                            "--",
+                        );
+
+                        var sunTimes = byId("sunTimes");
+                        if (!sunTimes) {
+                            sunTimes = document.createElement("div");
+                            sunTimes.id = "sunTimes";
+                            timePanel.appendChild(sunTimes);
+                        }
+                        elements.sunrise = ensureSunEntry(
+                            sunTimes,
+                            "sunriseValue",
+                            "Sunrise",
+                        );
+                        elements.sunset = ensureSunEntry(
+                            sunTimes,
+                            "sunsetValue",
+                            "Sunset",
+                        );
+                    }
 
                     var i;
                     for (i = 0; i < FORECAST_ITEMS; i++) {
@@ -178,6 +305,18 @@
 
                     if (elements.location) {
                         elements.location.textContent = LOCATION_NAME;
+                    }
+                    if (elements.date && !elements.date.textContent) {
+                        elements.date.textContent = "--";
+                    }
+                    if (elements.time && !elements.time.textContent) {
+                        elements.time.textContent = "--";
+                    }
+                    if (elements.sunrise) {
+                        elements.sunrise.textContent = "--";
+                    }
+                    if (elements.sunset) {
+                        elements.sunset.textContent = "--";
                     }
                     if (elements.unit) {
                         elements.unit.textContent = UNIT_SYMBOL;
@@ -332,17 +471,11 @@
                     if (data.sys) {
                         elements.sunrise.textContent =
                             typeof data.sys.sunrise === "number"
-                                ? formatTime(
-                                      data.sys.sunrise,
-                                      timezoneOffset,
-                                  )
+                                ? formatTime(data.sys.sunrise, timezoneOffset)
                                 : "--";
                         elements.sunset.textContent =
                             typeof data.sys.sunset === "number"
-                                ? formatTime(
-                                      data.sys.sunset,
-                                      timezoneOffset,
-                                  )
+                                ? formatTime(data.sys.sunset, timezoneOffset)
                                 : "--";
                     }
                 }
@@ -544,20 +677,7 @@
     <body>
         <div id="app">
             <div id="mainPanel">
-                <div id="timePanel">
-                    <div id="dateValue">--</div>
-                    <div id="timeValue">--</div>
-                    <div id="sunTimes">
-                        <span class="sun-entry">
-                            <span class="detail-label">Sunrise:</span>
-                            <span id="sunriseValue">--</span>
-                        </span>
-                        <span class="sun-entry">
-                            <span class="detail-label">Sunset:</span>
-                            <span id="sunsetValue">--</span>
-                        </span>
-                    </div>
-                </div>
+                <div id="timePanel"></div>
                 <div id="weatherPanel">
                     <div id="temperatureRow">
                         <div id="temperatureWrapper">
@@ -602,7 +722,9 @@
                 </div>
             </div>
             <div id="footer">
-                <div id="updatedInfo">Updated <span id="updatedValue">--</span></div>
+                <div id="updatedInfo">
+                    Updated <span id="updatedValue">--</span>
+                </div>
                 <div id="status">Loading...</div>
             </div>
         </div>
