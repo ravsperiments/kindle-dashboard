@@ -30,25 +30,6 @@ html.night {
     display: none;
 }
 
-#debugStatus {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    font-size: 12px;
-    background: #ffffff;
-    color: #000000;
-    padding: 4px 8px;
-    border: 1px solid #000000;
-    z-index: 1000;
-    display: none;
-}
-
-html.night #debugStatus {
-    background: #000000;
-    color: #ffffff;
-    border-color: #ffffff;
-}
-
 #page {
     position: relative;
     height: 100%;

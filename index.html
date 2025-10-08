@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="cs">
 <head>
-    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
     <meta name="viewport"
           content="width=320, initial-scale=1, maximum-scale=1, user-scalable=0, target-densitydpi=medium-dpi">
-    <title>Kindle Weather Dashboard</title>
     <script src="vendor/moment/moment-with-locales.js" type="text/javascript"></script>
     <script src="config.js" type="text/javascript"></script>
     <link rel="stylesheet" type="text/css" href="vendor/weathericons/css/weather-icons.css"/>
@@ -12,75 +11,14 @@
     <link rel="stylesheet" type="text/css" href="css/kindle.css"/>
 
     <script type="text/javascript">
-    ;(function(){
-        'use strict';
-
-        // Kindle browser may not expose console APIs; provide resilient fallbacks.
-        window.console = window.console || {
-            log: function () {},
-            error: function () {},
-            warn: function () {}
-        };
-
-        var statusHideTimer = null;
-        var statusElement = null;
-        var statusAlertShown = false;
-
-        function ensureStatusElement() {
-            if (statusElement && statusElement.parentNode) {
-                return statusElement;
-            }
-
-            statusElement = document.getElementById("debugStatus");
-            if (!statusElement && document.body) {
-                statusElement = document.createElement("div");
-                statusElement.id = "debugStatus";
-                statusElement.setAttribute("aria-live", "polite");
-                document.body.insertBefore(statusElement, document.body.firstChild);
-            }
-            return statusElement;
+        if (!window.console) {
+            window.console = {
+                log: function () {},
+                error: function () {},
+                warn: function () {}
+            };
         }
 
-        function showStatus(message, options) {
-            if (window.console && typeof window.console.log === "function") {
-                window.console.log("[status] " + message);
-            }
-
-            if (!options) {
-                options = {};
-            }
-
-            if (typeof options.persist === "undefined") {
-                options.persist = true;
-            }
-
-            var statusEl = ensureStatusElement();
-            if (!statusEl) {
-                window.setTimeout(function () {
-                    showStatus(message, options);
-                }, 100);
-                return;
-            }
-
-            if (statusHideTimer !== null) {
-                window.clearTimeout(statusHideTimer);
-                statusHideTimer = null;
-            }
-
-            if (!message) {
-                statusEl.style.display = "none";
-                return;
-            }
-
-            statusEl.style.display = "block";
-            statusEl.textContent = message;
-
-            if (!options.persist) {
-                statusHideTimer = window.setTimeout(function () {
-                    statusEl.style.display = "none";
-                }, options.duration || 8000);
-            }
-        }
         var apiProtocolConfig = (typeof api_protocol !== "undefined" && api_protocol) ? api_protocol : null;
         var apiProtocol = apiProtocolConfig ? apiProtocolConfig : (window.location.protocol === 'file:' ? 'https:' : window.location.protocol);
 
@@ -90,117 +28,37 @@
                 request: function (src, callback, id) {
                     try {
 
-                        var self = this;
-                        var script = null;
-                        var timeoutHandle = null;
-                        var attemptIndex = 0;
-                        var currentSrc = null;
+                        var self = this,
+                            script = null;
 
-                        var attempts = [];
-                        if (src.indexOf("https://") === 0) {
-                            attempts.push(src);
-                            attempts.push("http://" + src.substring(8));
-                        } else {
-                            attempts.push(src);
-                        }
+                        self.done = false;
 
                         if (typeof id === "undefined") {
                             id = "jsonp";
                         }
 
-                        function removeExistingScript() {
-                            var old = document.getElementById(id);
-                            if (old !== null && old.parentNode) {
-                                old.parentNode.removeChild(old);
-                            }
+                        if (document.getElementById(id) !== null) {
+                            script = document.getElementById(id);
+                            document.body.removeChild(script);
                         }
 
-                        function cleanup() {
-                            if (timeoutHandle !== null) {
-                                window.clearTimeout(timeoutHandle);
-                                timeoutHandle = null;
-                            }
+                        script = document.createElement('script');
+                        script.type = 'application/javascript';
+                        script.id = id;
+                        script.src = src;
+                        script.onload = function () {
+                            console.log("onload");
 
-                            if (script !== null) {
-                                script.onload = null;
-                                script.onerror = null;
-                                if (script.parentNode) {
-                                    script.parentNode.removeChild(script);
-                                }
-                                script = null;
-                            }
-                        }
-
-                        function fail(reason) {
-                            cleanup();
-                            var reasonText = reason;
-                            if (reason === "timeout") {
-                                reasonText = "request timed out";
-                            } else if (reason === "network-error") {
-                                reasonText = "network error";
-                            } else if (reason === "empty-response") {
-                                reasonText = "empty response";
-                            }
-
-                            var nextAttempt = attemptIndex + 1;
-                            if (nextAttempt < attempts.length) {
-                                showStatus("Retrying weather request over HTTP (" + reasonText + ")...");
-                                attemptIndex = nextAttempt;
-                                attemptLoad();
-                            } else {
-                                showStatus("Failed to load weather data (" + reasonText + ").", { persist: true });
-                                if (!statusAlertShown) {
-                                    statusAlertShown = true;
-                                    try {
-                                        window.alert("Weather data failed to load (" + reasonText + "). Please check connectivity or set api_protocol=\"http:\".");
-                                    } catch (alertError) {
-                                        // ignore alert failures on devices without alert support
-                                    }
-                                }
-                                if (typeof callback !== "undefined") {
-                                    callback(null);
-                                }
-                            }
-                        }
-
-                        function succeed() {
-                            cleanup();
                             if (typeof callback !== "undefined") {
                                 callback(self.responseObject);
                             }
-                        }
 
-                        function attemptLoad() {
-                            removeExistingScript();
+                            script.onload = null;
+                            document.body.removeChild(script);
+                            script = null;
+                        };
 
-                            self.responseObject = null;
-                            currentSrc = attempts[attemptIndex];
-
-                            script = document.createElement('script');
-                            script.type = 'application/javascript';
-                            script.id = id;
-                            script.src = currentSrc;
-                            script.onload = function () {
-                                console.log("onload");
-                                if (self.responseObject === null) {
-                                    // JSONP did not run (likely blocked). Treat as error.
-                                    fail("empty-response");
-                                    return;
-                                }
-                                succeed();
-                            };
-                            script.onerror = function () {
-                                fail("network-error");
-                            };
-
-                            timeoutHandle = window.setTimeout(function () {
-                                fail("timeout");
-                            }, 15000);
-
-                            document.body.appendChild(script);
-                        }
-
-                        attemptLoad();
+                        document.body.appendChild(script);
                     } catch (exception) {
                         console.log(exception);
                     }
@@ -219,7 +77,6 @@
 
 
         function refreshActualWeather() {
-            showStatus("Requesting current weather...");
             jsonp.request(apiProtocol + "//api.openweathermap.org/data/2.5/weather?" + _apiParams + "&callback=jsonp.response" + "&_timestamp=" + (new Date()).getTime()
                 , function (data) {
                     processActualWeather(data);
@@ -227,7 +84,6 @@
         }
 
         function refreshForecastWeather() {
-            showStatus("Requesting forecast...");
             jsonp.request(apiProtocol + "//api.openweathermap.org/data/2.5/forecast?" + _apiParams + "&callback=jsonp.response" + "&_timestamp=" + (new Date()).getTime()
                 , function (data) {
                     processForecastWeather(data);
@@ -243,11 +99,6 @@
         }
 
         function processForecastWeather(data) {
-            if (!data || !data.city || !data.list) {
-                showStatus("Forecast data missing.", { persist: true });
-                return;
-            }
-            showStatus("Processing forecast...");
             dataTimeZone = data.city.timezone
 
             for (var i = 0; i < forecastCount; i++) {
@@ -265,7 +116,6 @@
             }
 
             setMoonIconsRotation(data.city.coord.lat)
-            showStatus("Forecast updated at " + momentWithCorrectUtcOffset(new Date()).format(timeFormat));
         }
 
         function getIconClassName(weather, date) {
@@ -358,11 +208,6 @@
         };
 
         function processActualWeather(data) {
-            if (!data || !data.weather || !data.main) {
-                showStatus("Current weather data missing.", { persist: true });
-                return;
-            }
-            showStatus("Processing current weather...");
             dataTimeZone = data.timezone
 
             var feelsLike = tempType == "feelsLike";
@@ -388,7 +233,6 @@
             //  alert(data.name);
             setNightMode();
             setMoonIconsRotation(data.coord.lat)
-            showStatus("Current weather updated at " + momentWithCorrectUtcOffset(new Date()).format(timeFormat));
         }
 
         /**
@@ -493,10 +337,11 @@
 
         var timeFormat = "HH:mm";
 
-        // Configuration: override config.js globals via URL params
-        var tempType;
+        // Config parameters.
+        var api_params, api_appId, api_lang, api_units, api_locParams, rotation, night_mode, refreshTime, utcOffset, tempType;
+
         utcOffset = getUrlParameter("utcOffset") ? getUrlParameter("utcOffset") : utcOffset;
-        tempType  = getUrlParameter("tempType")  ? getUrlParameter("tempType")  : tempType;
+        tempType = getUrlParameter("tempType") ? getUrlParameter("tempType") : tempType;
 
         var dataTimeZone = 0;
 
@@ -572,20 +417,14 @@
         }
 
         window.addEventListener('load', function () {
-            showStatus("Load event fired");
             console.log("load");
 
-            showStatus("Reading configuration...");
             _apiParams = getApiParams();
             if (_apiParams === null) {
-                showStatus("Missing configuration, redirecting to config.html", { persist: true });
                 window.location = "config.html";
-                return;
             }
 
-            var locale = momentLocale();
-            moment.locale(locale);
-            showStatus("Locale set to " + (locale || "default"));
+            moment.locale(momentLocale());
 
             cleaner = document.getElementById("cleaner");
 
@@ -593,7 +432,6 @@
             temp = document.getElementById("temp");
             icon = document.getElementById("icon");
 
-            showStatus("Binding UI events...");
             city = document.getElementById("city");
             city.addEventListener('click', function (event) {
                 event.preventDefault();
@@ -622,13 +460,11 @@
                 });
             }
 
-            showStatus("Starting data refresh...");
             refreshData();
 
             rotate();
             setRem("load");
             setNightMode();
-            showStatus("Dashboard ready", { persist: false, duration: 4000 });
 
             // Set Cleanup for 4am
             var now = new Date();
@@ -746,55 +582,49 @@
             }
         }
 
-    // Expose key APIs for JSONP callbacks and string-based timer calls
-    window.jsonp = jsonp;
-    window.refreshData = refreshData;
-    window.clearScreen = clearScreen;
-    }());
     </script>
 
 </head>
 
 
 <body>
-<div id="debugStatus" aria-live="polite"></div>
-<div id="page" role="main">
-    <a id="city" href="./config.html" aria-label="Configure location"></a>
-    <div id="iconWrapper"><i id="icon" aria-hidden="true"></i></div>
+<div id="page">
+    <a id="city" href="./config.html"></a>
+    <div id="iconWrapper"><i id="icon"></i></div>
     <div class="tempWrapper">
         <div id="temp"></div>
         <!--<i class="celsius wi wi-celsius"></i>-->
     </div>
     <div id="description"></div>
-    <div id="lastUpdate" aria-live="polite"></div>
-    <div class="forecast" role="region" aria-label="Weather forecast">
-        <div class="col col1" role="group" aria-labelledby="time1">
+    <div id="lastUpdate"></div>
+    <div class="forecast">
+        <div class="col col1">
             <div id="time1" class="colTime"></div>
-            <div class="forecastIconWrapper"><i id="icon1" class="colIcon" aria-hidden="true"></i></div>
+            <div class="forecastIconWrapper"><i id="icon1" class="colIcon"></i></div>
             <div id="temp1" class="colTemp"></div>
             <div id="desc1" class="colDesc"></div>
         </div>
-        <div class="col col2" role="group" aria-labelledby="time2">
+        <div class="col col2">
             <div id="time2" class="colTime"></div>
-            <div class="forecastIconWrapper"><i id="icon2" class="colIcon" aria-hidden="true"></i></div>
+            <div class="forecastIconWrapper"><i id="icon2" class="colIcon"></i></div>
             <div id="temp2" class="colTemp"></div>
             <div id="desc2" class="colDesc"></div>
         </div>
-        <div class="col col3" role="group" aria-labelledby="time3">
+        <div class="col col3">
             <div id="time3" class="colTime"></div>
-            <div class="forecastIconWrapper"><i id="icon3" class="colIcon" aria-hidden="true"></i></div>
+            <div class="forecastIconWrapper"><i id="icon3" class="colIcon"></i></div>
             <div id="temp3" class="colTemp"></div>
             <div id="desc3" class="colDesc"></div>
         </div>
-        <div class="col col4" role="group" aria-labelledby="time4">
+        <div class="col col4">
             <div id="time4" class="colTime"></div>
-            <div class="forecastIconWrapper"><i id="icon4" class="colIcon" aria-hidden="true"></i></div>
+            <div class="forecastIconWrapper"><i id="icon4" class="colIcon"></i></div>
             <div id="temp4" class="colTemp"></div>
             <div id="desc4" class="colDesc"></div>
         </div>
-        <div class="col col5" role="group" aria-labelledby="time5">
+        <div class="col col5">
             <div id="time5" class="colTime"></div>
-            <div class="forecastIconWrapper"><i id="icon5" class="colIcon" aria-hidden="true"></i></div>
+            <div class="forecastIconWrapper"><i id="icon5" class="colIcon"></i></div>
             <div id="temp5" class="colTemp"></div>
             <div id="desc5" class="colDesc"></div>
         </div>
@@ -802,6 +632,6 @@
     <div id="date"></div>
     <div id="sun"></div>
 </div>
-<div id="cleaner" aria-hidden="true"></div>
+<div id="cleaner"></div>
 </body>
 </html>
