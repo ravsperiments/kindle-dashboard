@@ -23,19 +23,43 @@
         };
 
         var statusHideTimer = null;
+        var statusElement = null;
+        var statusAlertShown = false;
+
+        function ensureStatusElement() {
+            if (statusElement && statusElement.parentNode) {
+                return statusElement;
+            }
+
+            statusElement = document.getElementById("debugStatus");
+            if (!statusElement && document.body) {
+                statusElement = document.createElement("div");
+                statusElement.id = "debugStatus";
+                statusElement.setAttribute("aria-live", "polite");
+                document.body.insertBefore(statusElement, document.body.firstChild);
+            }
+            return statusElement;
+        }
 
         function showStatus(message, options) {
             if (window.console && typeof window.console.log === "function") {
                 window.console.log("[status] " + message);
             }
 
-            var statusEl = document.getElementById("debugStatus");
-            if (!statusEl) {
-                return;
-            }
-
             if (!options) {
                 options = {};
+            }
+
+            if (typeof options.persist === "undefined") {
+                options.persist = true;
+            }
+
+            var statusEl = ensureStatusElement();
+            if (!statusEl) {
+                window.setTimeout(function () {
+                    showStatus(message, options);
+                }, 100);
+                return;
             }
 
             if (statusHideTimer !== null) {
@@ -114,6 +138,8 @@
                                 reasonText = "request timed out";
                             } else if (reason === "network-error") {
                                 reasonText = "network error";
+                            } else if (reason === "empty-response") {
+                                reasonText = "empty response";
                             }
 
                             var nextAttempt = attemptIndex + 1;
@@ -123,6 +149,14 @@
                                 attemptLoad();
                             } else {
                                 showStatus("Failed to load weather data (" + reasonText + ").", { persist: true });
+                                if (!statusAlertShown) {
+                                    statusAlertShown = true;
+                                    try {
+                                        window.alert("Weather data failed to load (" + reasonText + "). Please check connectivity or set api_protocol=\"http:\".");
+                                    } catch (alertError) {
+                                        // ignore alert failures on devices without alert support
+                                    }
+                                }
                                 if (typeof callback !== "undefined") {
                                     callback(null);
                                 }
@@ -594,7 +628,7 @@
             rotate();
             setRem("load");
             setNightMode();
-            showStatus("Dashboard ready");
+            showStatus("Dashboard ready", { persist: false, duration: 4000 });
 
             // Set Cleanup for 4am
             var now = new Date();
