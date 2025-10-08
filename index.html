@@ -1,400 +1,600 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
-    <meta name="viewport"
-          content="width=320, initial-scale=1, maximum-scale=1, user-scalable=0, target-densitydpi=medium-dpi">
-    <title>Paperwhite Weather</title>
-    <link rel="stylesheet" type="text/css" href="css/kindle.css"/>
-    <script type="text/javascript">
-    (function () {
-        'use strict';
+    <head>
+        <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+        <meta
+            name="viewport"
+            content="width=320, initial-scale=1, maximum-scale=1, user-scalable=0, target-densitydpi=medium-dpi"
+        />
+        <title>Paperwhite Weather</title>
+        <link rel="stylesheet" type="text/css" href="css/kindle.css" />
+        <script type="text/javascript">
+            (function () {
+                "use strict";
 
-        if (!window.console) {
-            window.console = {
-                log: function () {},
-                error: function () {},
-                warn: function () {}
-            };
-        }
+                if (!window.console) {
+                    window.console = {
+                        log: function () {},
+                        error: function () {},
+                        warn: function () {},
+                    };
+                }
 
-        var LATITUDE = 47.7258;
-        var LONGITUDE = -122.1649;
-        var LOCATION_NAME = "Redmond, WA";
-        var APP_ID = "a4ca63cec93d4b0dcebe65db9a53931a";
-        var UNITS = "metric";
-        var UNIT_SYMBOL = (UNITS === "imperial") ? "°F" : "°C";
-        var WIND_UNIT = (UNITS === "imperial") ? "mph" : "km/h";
-        var LANGUAGE = "en";
-        var FORECAST_ITEMS = 3;
-        var REFRESH_INTERVAL = 30 * 60 * 1000;
-        var REQUEST_TIMEOUT = 15000;
+                var LATITUDE = 47.7258;
+                var LONGITUDE = -122.1649;
+                var LOCATION_NAME = "Redmond, WA";
+                var APP_ID = "a4ca63cec93d4b0dcebe65db9a53931a";
+                var UNITS = "metric";
+                var UNIT_SYMBOL = UNITS === "imperial" ? "°F" : "°C";
+                var WIND_UNIT = UNITS === "imperial" ? "mph" : "km/h";
+                var LANGUAGE = "en";
+                var FORECAST_ITEMS = 3;
+                var REFRESH_INTERVAL = 30 * 60 * 1000;
+                var REQUEST_TIMEOUT = 15000;
 
-        var protocolCandidates = ["https:", "http:"];
+                var protocolCandidates = ["https:", "http:"];
 
-        var elements = {};
-        var forecastCells = [];
-        var refreshTimer = null;
+                var elements = {};
+                var forecastCells = [];
+                var refreshTimer = null;
 
-        function byId(id) {
-            return document.getElementById(id);
-        }
+                function byId(id) {
+                    return document.getElementById(id);
+                }
 
-        function pad(value) {
-            return value < 10 ? "0" + value : "" + value;
-        }
+                function pad(value) {
+                    return value < 10 ? "0" + value : "" + value;
+                }
 
-        function capitalize(text) {
-            if (!text) {
-                return "";
-            }
-            return text.charAt(0).toUpperCase() + text.slice(1);
-        }
+                function capitalize(text) {
+                    if (!text) {
+                        return "";
+                    }
+                    return text.charAt(0).toUpperCase() + text.slice(1);
+                }
 
-        function asRounded(value) {
-            return (typeof value === "number" && !isNaN(value)) ? Math.round(value) : null;
-        }
+                function asRounded(value) {
+                    return typeof value === "number" && !isNaN(value)
+                        ? Math.round(value)
+                        : null;
+                }
 
-        function formatTime(timestampSeconds, offsetSeconds) {
-            var date = new Date((timestampSeconds + offsetSeconds) * 1000);
-            return pad(date.getUTCHours()) + ":" + pad(date.getUTCMinutes());
-        }
+                function formatTime(timestampSeconds, offsetSeconds) {
+                    var date = new Date(
+                        (timestampSeconds + offsetSeconds) * 1000,
+                    );
+                    return (
+                        pad(date.getUTCHours()) +
+                        ":" +
+                        pad(date.getUTCMinutes())
+                    );
+                }
 
-        function formatDateTime(timestampSeconds, offsetSeconds) {
-            var date = new Date((timestampSeconds + offsetSeconds) * 1000);
-            var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-            return days[date.getUTCDay()] + " " + months[date.getUTCMonth()] + " " + pad(date.getUTCDate()) + " " + pad(date.getUTCHours()) + ":" + pad(date.getUTCMinutes());
-        }
+                var DAYS = [
+                    "Sun",
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat",
+                ];
+                var MONTHS = [
+                    "Jan",
+                    "Feb",
+                    "Mar",
+                    "Apr",
+                    "May",
+                    "Jun",
+                    "Jul",
+                    "Aug",
+                    "Sep",
+                    "Oct",
+                    "Nov",
+                    "Dec",
+                ];
 
-        function kmhFromMs(speed) {
-            return Math.round(speed * 3.6);
-        }
+                function formatDateTime(timestampSeconds, offsetSeconds) {
+                    var date = new Date(
+                        (timestampSeconds + offsetSeconds) * 1000,
+                    );
+                    return (
+                        DAYS[date.getUTCDay()] +
+                        " " +
+                        MONTHS[date.getUTCMonth()] +
+                        " " +
+                        pad(date.getUTCDate()) +
+                        " " +
+                        pad(date.getUTCHours()) +
+                        ":" +
+                        pad(date.getUTCMinutes())
+                    );
+                }
 
-        function setStatus(message) {
-            if (elements.status) {
-                elements.status.textContent = message;
-            }
-        }
+                function formatDateLabel(timestampSeconds, offsetSeconds) {
+                    var date = new Date(
+                        (timestampSeconds + offsetSeconds) * 1000,
+                    );
+                    return (
+                        DAYS[date.getUTCDay()] +
+                        ", " +
+                        date.getUTCDate() +
+                        " " +
+                        MONTHS[date.getUTCMonth()]
+                    );
+                }
 
-        function setForecastPlaceholders() {
-            for (var i = 0; i < forecastCells.length; i++) {
-                forecastCells[i].time.textContent = "--";
-                forecastCells[i].temp.textContent = "--";
-                forecastCells[i].desc.textContent = "";
-            }
-        }
+                function kmhFromMs(speed) {
+                    return Math.round(speed * 3.6);
+                }
 
-        function initElements() {
-            elements.location = byId("location");
-            elements.temperature = byId("temperature");
-            elements.unit = byId("unit");
-            elements.description = byId("description");
-            elements.feelsLike = byId("feelsLikeValue");
-            elements.wind = byId("windValue");
-            elements.humidity = byId("humidityValue");
-            elements.sunrise = byId("sunriseValue");
-            elements.sunset = byId("sunsetValue");
-            elements.updated = byId("updatedValue");
-            elements.status = byId("status");
+                function setStatus(message) {
+                    if (elements.status) {
+                        elements.status.textContent = message;
+                    }
+                }
 
-            var i;
-            for (i = 0; i < FORECAST_ITEMS; i++) {
-                forecastCells.push({
-                    time: byId("forecastTime" + i),
-                    temp: byId("forecastTemp" + i),
-                    desc: byId("forecastDesc" + i)
+                function setForecastPlaceholders() {
+                    for (var i = 0; i < forecastCells.length; i++) {
+                        forecastCells[i].time.textContent = "--";
+                        forecastCells[i].temp.textContent = "--";
+                        forecastCells[i].desc.textContent = "";
+                    }
+                }
+
+                function initElements() {
+                    elements.location = byId("location");
+                    elements.date = byId("dateValue");
+                    elements.time = byId("timeValue");
+                    elements.temperature = byId("temperature");
+                    elements.unit = byId("unit");
+                    elements.description = byId("description");
+                    elements.feelsLike = byId("feelsLikeValue");
+                    elements.wind = byId("windValue");
+                    elements.humidity = byId("humidityValue");
+                    elements.sunrise = byId("sunriseValue");
+                    elements.sunset = byId("sunsetValue");
+                    elements.updated = byId("updatedValue");
+                    elements.status = byId("status");
+
+                    var i;
+                    for (i = 0; i < FORECAST_ITEMS; i++) {
+                        forecastCells.push({
+                            time: byId("forecastTime" + i),
+                            temp: byId("forecastTemp" + i),
+                            desc: byId("forecastDesc" + i),
+                        });
+                    }
+
+                    if (elements.location) {
+                        elements.location.textContent = LOCATION_NAME;
+                    }
+                    if (elements.unit) {
+                        elements.unit.textContent = UNIT_SYMBOL;
+                    }
+                    setForecastPlaceholders();
+                }
+
+                function buildUrl(protocol, endpoint) {
+                    var url =
+                        protocol +
+                        "//api.openweathermap.org/data/2.5/" +
+                        endpoint;
+                    var params =
+                        "lat=" +
+                        LATITUDE +
+                        "&lon=" +
+                        LONGITUDE +
+                        "&appid=" +
+                        APP_ID +
+                        "&units=" +
+                        UNITS +
+                        "&lang=" +
+                        LANGUAGE;
+                    if (endpoint === "forecast") {
+                        params += "&cnt=" + FORECAST_ITEMS * 2;
+                    }
+                    return url + "?" + params;
+                }
+
+                function requestJsonp(url, onSuccess, onFailure) {
+                    var callbackName =
+                        "jsonp_cb_" +
+                        new Date().getTime() +
+                        "_" +
+                        Math.floor(Math.random() * 1000);
+                    var script = document.createElement("script");
+                    var completed = false;
+                    var timedOut = false;
+                    var timeoutId = null;
+
+                    function cleanup() {
+                        if (timeoutId !== null) {
+                            window.clearTimeout(timeoutId);
+                            timeoutId = null;
+                        }
+                        if (script && script.parentNode) {
+                            script.parentNode.removeChild(script);
+                        }
+                        try {
+                            delete window[callbackName];
+                        } catch (err) {
+                            window[callbackName] = undefined;
+                        }
+                    }
+
+                    window[callbackName] = function (data) {
+                        if (timedOut) {
+                            return;
+                        }
+                        completed = true;
+                        cleanup();
+                        onSuccess(data);
+                    };
+
+                    script.onerror = function () {
+                        if (completed) {
+                            return;
+                        }
+                        cleanup();
+                        onFailure("network");
+                    };
+
+                    var separator = url.indexOf("?") >= 0 ? "&" : "?";
+                    script.src =
+                        url +
+                        separator +
+                        "callback=" +
+                        callbackName +
+                        "&ts=" +
+                        new Date().getTime();
+                    document.body.appendChild(script);
+
+                    timeoutId = window.setTimeout(function () {
+                        timedOut = true;
+                        if (completed) {
+                            return;
+                        }
+                        cleanup();
+                        onFailure("timeout");
+                    }, REQUEST_TIMEOUT);
+                }
+
+                function updateCurrentUI(data) {
+                    if (!data || !data.main) {
+                        return;
+                    }
+                    if (elements.location && data.name) {
+                        elements.location.textContent = data.name;
+                    }
+
+                    var timezoneOffset = data.timezone || 0;
+                    if (elements.date) {
+                        elements.date.textContent = formatDateLabel(
+                            data.dt,
+                            timezoneOffset,
+                        );
+                    }
+                    if (elements.time) {
+                        elements.time.textContent = formatTime(
+                            data.dt,
+                            timezoneOffset,
+                        );
+                    }
+
+                    var tempValue = asRounded(data.main.temp);
+                    elements.temperature.textContent =
+                        tempValue !== null ? tempValue : "--";
+                    elements.unit.textContent = UNIT_SYMBOL;
+
+                    var descriptionText = "";
+                    if (
+                        data.weather &&
+                        data.weather.length > 0 &&
+                        data.weather[0].description
+                    ) {
+                        descriptionText = capitalize(
+                            data.weather[0].description,
+                        );
+                    }
+                    elements.description.textContent = descriptionText;
+
+                    var feelsValue = asRounded(data.main.feels_like);
+                    elements.feelsLike.textContent =
+                        feelsValue !== null ? feelsValue + UNIT_SYMBOL : "--";
+
+                    var windDisplay = "--";
+                    if (data.wind && typeof data.wind.speed === "number") {
+                        if (UNITS === "imperial") {
+                            windDisplay =
+                                Math.round(data.wind.speed) + " " + WIND_UNIT;
+                        } else {
+                            windDisplay =
+                                kmhFromMs(data.wind.speed) + " " + WIND_UNIT;
+                        }
+                    }
+                    elements.wind.textContent = windDisplay;
+
+                    var humidityValue = asRounded(data.main.humidity);
+                    elements.humidity.textContent =
+                        humidityValue !== null ? humidityValue + "%" : "--";
+
+                    if (data.sys) {
+                        elements.sunrise.textContent =
+                            typeof data.sys.sunrise === "number"
+                                ? formatTime(
+                                      data.sys.sunrise,
+                                      timezoneOffset,
+                                  )
+                                : "--";
+                        elements.sunset.textContent =
+                            typeof data.sys.sunset === "number"
+                                ? formatTime(
+                                      data.sys.sunset,
+                                      timezoneOffset,
+                                  )
+                                : "--";
+                    }
+                }
+
+                function updateForecastUI(data) {
+                    if (!data || !data.list || !data.city) {
+                        setForecastPlaceholders();
+                        return;
+                    }
+                    var timezoneOffset = data.city.timezone || 0;
+                    var i;
+                    for (i = 0; i < forecastCells.length; i++) {
+                        if (i < data.list.length) {
+                            var entry = data.list[i];
+                            forecastCells[i].time.textContent = formatTime(
+                                entry.dt,
+                                timezoneOffset,
+                            );
+                            var forecastTemp = asRounded(
+                                entry.main && entry.main.temp,
+                            );
+                            forecastCells[i].temp.textContent =
+                                forecastTemp !== null
+                                    ? forecastTemp + UNIT_SYMBOL
+                                    : "--";
+                            var forecastDesc = "";
+                            if (
+                                entry.weather &&
+                                entry.weather.length > 0 &&
+                                entry.weather[0].main
+                            ) {
+                                forecastDesc = capitalize(
+                                    entry.weather[0].main,
+                                );
+                            }
+                            forecastCells[i].desc.textContent = forecastDesc;
+                        } else {
+                            forecastCells[i].time.textContent = "--";
+                            forecastCells[i].temp.textContent = "--";
+                            forecastCells[i].desc.textContent = "";
+                        }
+                    }
+                }
+
+                function scheduleNext() {
+                    if (refreshTimer !== null) {
+                        window.clearTimeout(refreshTimer);
+                    }
+                    refreshTimer = window.setTimeout(
+                        refreshAll,
+                        REFRESH_INTERVAL,
+                    );
+                }
+
+                function loadCurrent(protocolIndex, onSuccess, onFailure) {
+                    if (protocolIndex >= protocolCandidates.length) {
+                        onFailure(
+                            "Weather update failed (all protocols exhausted)",
+                        );
+                        return;
+                    }
+                    var protocol = protocolCandidates[protocolIndex];
+                    var url = buildUrl(protocol, "weather");
+                    requestJsonp(
+                        url,
+                        function (data) {
+                            var code =
+                                data && data.cod ? parseInt(data.cod, 10) : 0;
+                            if (!data || (code !== 200 && code !== 0)) {
+                                onFailure("Weather data unavailable");
+                                return;
+                            }
+                            updateCurrentUI(data);
+                            onSuccess(data);
+                        },
+                        function (reason) {
+                            if (protocolIndex + 1 < protocolCandidates.length) {
+                                setStatus("Retrying weather via HTTP...");
+                                loadCurrent(
+                                    protocolIndex + 1,
+                                    onSuccess,
+                                    onFailure,
+                                );
+                            } else {
+                                onFailure(
+                                    "Weather update failed (" + reason + ")",
+                                );
+                            }
+                        },
+                    );
+                }
+
+                function loadForecast(protocolIndex, onSuccess, onFailure) {
+                    if (protocolIndex >= protocolCandidates.length) {
+                        onFailure(
+                            "Forecast update failed (all protocols exhausted)",
+                        );
+                        return;
+                    }
+                    var protocol = protocolCandidates[protocolIndex];
+                    var url = buildUrl(protocol, "forecast");
+                    requestJsonp(
+                        url,
+                        function (data) {
+                            var code =
+                                data && data.cod ? parseInt(data.cod, 10) : 0;
+                            if (!data || (code !== 200 && code !== 0)) {
+                                onFailure("Forecast data unavailable");
+                                return;
+                            }
+                            updateForecastUI(data);
+                            onSuccess();
+                        },
+                        function (reason) {
+                            if (protocolIndex + 1 < protocolCandidates.length) {
+                                setStatus("Retrying forecast via HTTP...");
+                                loadForecast(
+                                    protocolIndex + 1,
+                                    onSuccess,
+                                    onFailure,
+                                );
+                            } else {
+                                onFailure(
+                                    "Forecast update failed (" + reason + ")",
+                                );
+                            }
+                        },
+                    );
+                }
+
+                function refreshAll() {
+                    if (refreshTimer !== null) {
+                        window.clearTimeout(refreshTimer);
+                        refreshTimer = null;
+                    }
+                    setStatus("Updating weather...");
+                    var outstanding = 2;
+                    var successCount = 0;
+                    var latestWeatherData = null;
+                    var messageLocked = false;
+
+                    function markDone(success) {
+                        outstanding -= 1;
+                        if (success) {
+                            successCount += 1;
+                        }
+                        if (outstanding <= 0) {
+                            if (successCount === 2 && latestWeatherData) {
+                                var stamp = formatDateTime(
+                                    latestWeatherData.dt,
+                                    latestWeatherData.timezone || 0,
+                                );
+                                elements.updated.textContent = stamp;
+                                setStatus("Updated " + stamp);
+                            }
+                            scheduleNext();
+                        }
+                    }
+
+                    loadCurrent(
+                        0,
+                        function (data) {
+                            latestWeatherData = data;
+                            markDone(true);
+                        },
+                        function (message) {
+                            if (!messageLocked) {
+                                setStatus(message);
+                                messageLocked = true;
+                            }
+                            markDone(false);
+                        },
+                    );
+
+                    loadForecast(
+                        0,
+                        function () {
+                            markDone(true);
+                        },
+                        function (message) {
+                            if (!messageLocked) {
+                                setStatus(message);
+                                messageLocked = true;
+                            }
+                            setForecastPlaceholders();
+                            markDone(false);
+                        },
+                    );
+                }
+
+                window.addEventListener("load", function () {
+                    initElements();
+                    setStatus("Updating weather...");
+                    refreshAll();
                 });
-            }
-
-            if (elements.location) {
-                elements.location.textContent = LOCATION_NAME;
-            }
-            if (elements.unit) {
-                elements.unit.textContent = UNIT_SYMBOL;
-            }
-            setForecastPlaceholders();
-        }
-
-        function buildUrl(protocol, endpoint) {
-            var url = protocol + "//api.openweathermap.org/data/2.5/" + endpoint;
-            var params = "lat=" + LATITUDE + "&lon=" + LONGITUDE + "&appid=" + APP_ID + "&units=" + UNITS + "&lang=" + LANGUAGE;
-            if (endpoint === "forecast") {
-                params += "&cnt=" + (FORECAST_ITEMS * 2);
-            }
-            return url + "?" + params;
-        }
-
-        function requestJsonp(url, onSuccess, onFailure) {
-            var callbackName = "jsonp_cb_" + new Date().getTime() + "_" + Math.floor(Math.random() * 1000);
-            var script = document.createElement("script");
-            var completed = false;
-            var timedOut = false;
-            var timeoutId = null;
-
-            function cleanup() {
-                if (timeoutId !== null) {
-                    window.clearTimeout(timeoutId);
-                    timeoutId = null;
-                }
-                if (script && script.parentNode) {
-                    script.parentNode.removeChild(script);
-                }
-                try {
-                    delete window[callbackName];
-                } catch (err) {
-                    window[callbackName] = undefined;
-                }
-            }
-
-            window[callbackName] = function (data) {
-                if (timedOut) {
-                    return;
-                }
-                completed = true;
-                cleanup();
-                onSuccess(data);
-            };
-
-            script.onerror = function () {
-                if (completed) {
-                    return;
-                }
-                cleanup();
-                onFailure("network");
-            };
-
-            var separator = url.indexOf("?") >= 0 ? "&" : "?";
-            script.src = url + separator + "callback=" + callbackName + "&ts=" + new Date().getTime();
-            document.body.appendChild(script);
-
-            timeoutId = window.setTimeout(function () {
-                timedOut = true;
-                if (completed) {
-                    return;
-                }
-                cleanup();
-                onFailure("timeout");
-            }, REQUEST_TIMEOUT);
-        }
-
-        function updateCurrentUI(data) {
-            if (!data || !data.main) {
-                return;
-            }
-            if (elements.location && data.name) {
-                elements.location.textContent = data.name;
-            }
-
-            var tempValue = asRounded(data.main.temp);
-            elements.temperature.textContent = tempValue !== null ? tempValue : "--";
-            elements.unit.textContent = UNIT_SYMBOL;
-
-            var descriptionText = "";
-            if (data.weather && data.weather.length > 0 && data.weather[0].description) {
-                descriptionText = capitalize(data.weather[0].description);
-            }
-            elements.description.textContent = descriptionText;
-
-            var feelsValue = asRounded(data.main.feels_like);
-            elements.feelsLike.textContent = feelsValue !== null ? feelsValue + UNIT_SYMBOL : "--";
-
-            var windDisplay = "--";
-            if (data.wind && typeof data.wind.speed === "number") {
-                if (UNITS === "imperial") {
-                    windDisplay = Math.round(data.wind.speed) + " " + WIND_UNIT;
-                } else {
-                    windDisplay = kmhFromMs(data.wind.speed) + " " + WIND_UNIT;
-                }
-            }
-            elements.wind.textContent = windDisplay;
-
-            var humidityValue = asRounded(data.main.humidity);
-            elements.humidity.textContent = humidityValue !== null ? humidityValue + "%" : "--";
-
-            if (data.sys) {
-                elements.sunrise.textContent = (typeof data.sys.sunrise === "number") ? formatTime(data.sys.sunrise, data.timezone) : "--";
-                elements.sunset.textContent = (typeof data.sys.sunset === "number") ? formatTime(data.sys.sunset, data.timezone) : "--";
-            }
-        }
-
-        function updateForecastUI(data) {
-            if (!data || !data.list || !data.city) {
-                setForecastPlaceholders();
-                return;
-            }
-            var timezoneOffset = data.city.timezone || 0;
-            var i;
-            for (i = 0; i < forecastCells.length; i++) {
-                if (i < data.list.length) {
-                    var entry = data.list[i];
-                    forecastCells[i].time.textContent = formatTime(entry.dt, timezoneOffset);
-                    var forecastTemp = asRounded(entry.main && entry.main.temp);
-                    forecastCells[i].temp.textContent = forecastTemp !== null ? forecastTemp + UNIT_SYMBOL : "--";
-                    var forecastDesc = "";
-                    if (entry.weather && entry.weather.length > 0 && entry.weather[0].main) {
-                        forecastDesc = capitalize(entry.weather[0].main);
-                    }
-                    forecastCells[i].desc.textContent = forecastDesc;
-                } else {
-                    forecastCells[i].time.textContent = "--";
-                    forecastCells[i].temp.textContent = "--";
-                    forecastCells[i].desc.textContent = "";
-                }
-            }
-        }
-
-        function scheduleNext() {
-            if (refreshTimer !== null) {
-                window.clearTimeout(refreshTimer);
-            }
-            refreshTimer = window.setTimeout(refreshAll, REFRESH_INTERVAL);
-        }
-
-        function loadCurrent(protocolIndex, onSuccess, onFailure) {
-            if (protocolIndex >= protocolCandidates.length) {
-                onFailure("Weather update failed (all protocols exhausted)");
-                return;
-            }
-            var protocol = protocolCandidates[protocolIndex];
-            var url = buildUrl(protocol, "weather");
-            requestJsonp(url, function (data) {
-                var code = data && data.cod ? parseInt(data.cod, 10) : 0;
-                if (!data || (code !== 200 && code !== 0)) {
-                    onFailure("Weather data unavailable");
-                    return;
-                }
-                updateCurrentUI(data);
-                onSuccess(data);
-            }, function (reason) {
-                if (protocolIndex + 1 < protocolCandidates.length) {
-                    setStatus("Retrying weather via HTTP...");
-                    loadCurrent(protocolIndex + 1, onSuccess, onFailure);
-                } else {
-                    onFailure("Weather update failed (" + reason + ")");
-                }
-            });
-        }
-
-        function loadForecast(protocolIndex, onSuccess, onFailure) {
-            if (protocolIndex >= protocolCandidates.length) {
-                onFailure("Forecast update failed (all protocols exhausted)");
-                return;
-            }
-            var protocol = protocolCandidates[protocolIndex];
-            var url = buildUrl(protocol, "forecast");
-            requestJsonp(url, function (data) {
-                var code = data && data.cod ? parseInt(data.cod, 10) : 0;
-                if (!data || (code !== 200 && code !== 0)) {
-                    onFailure("Forecast data unavailable");
-                    return;
-                }
-                updateForecastUI(data);
-                onSuccess();
-            }, function (reason) {
-                if (protocolIndex + 1 < protocolCandidates.length) {
-                    setStatus("Retrying forecast via HTTP...");
-                    loadForecast(protocolIndex + 1, onSuccess, onFailure);
-                } else {
-                    onFailure("Forecast update failed (" + reason + ")");
-                }
-            });
-        }
-
-        function refreshAll() {
-            if (refreshTimer !== null) {
-                window.clearTimeout(refreshTimer);
-                refreshTimer = null;
-            }
-            setStatus("Updating weather...");
-            var outstanding = 2;
-            var successCount = 0;
-            var latestWeatherData = null;
-            var messageLocked = false;
-
-            function markDone(success) {
-                outstanding -= 1;
-                if (success) {
-                    successCount += 1;
-                }
-                if (outstanding <= 0) {
-                    if (successCount === 2 && latestWeatherData) {
-                        var stamp = formatDateTime(latestWeatherData.dt, latestWeatherData.timezone || 0);
-                        elements.updated.textContent = stamp;
-                        setStatus("Updated " + stamp);
-                    }
-                    scheduleNext();
-                }
-            }
-
-            loadCurrent(0, function (data) {
-                latestWeatherData = data;
-                markDone(true);
-            }, function (message) {
-                if (!messageLocked) {
-                    setStatus(message);
-                    messageLocked = true;
-                }
-                markDone(false);
-            });
-
-            loadForecast(0, function () {
-                markDone(true);
-            }, function (message) {
-                if (!messageLocked) {
-                    setStatus(message);
-                    messageLocked = true;
-                }
-                setForecastPlaceholders();
-                markDone(false);
-            });
-        }
-
-        window.addEventListener("load", function () {
-            initElements();
-            setStatus("Updating weather...");
-            refreshAll();
-        });
-    }());
-    </script>
-</head>
-<body>
-<div id="app">
-    <div id="location">Loading...</div>
-    <div id="temperatureRow">
-        <div id="temperatureWrapper">
-            <span id="temperature">--</span><span id="unit">°C</span>
+            })();
+        </script>
+    </head>
+    <body>
+        <div id="app">
+            <div id="mainPanel">
+                <div id="timePanel">
+                    <div id="dateValue">--</div>
+                    <div id="timeValue">--</div>
+                    <div id="sunTimes">
+                        <span>
+                            <span class="detail-label">Sunrise:</span>
+                            <span id="sunriseValue">--</span>
+                        </span>
+                        <span>
+                            <span class="detail-label">Sunset:</span>
+                            <span id="sunsetValue">--</span>
+                        </span>
+                    </div>
+                </div>
+                <div id="weatherPanel">
+                    <div id="temperatureRow">
+                        <div id="temperatureWrapper">
+                            <span id="temperature">--</span>
+                            <span id="unit">°C</span>
+                        </div>
+                    </div>
+                    <div id="description">Loading...</div>
+                    <div id="details">
+                        <span>
+                            <span class="detail-label">Feels:</span>
+                            <span id="feelsLikeValue">--</span>
+                        </span>
+                        <span>
+                            <span class="detail-label">Wind:</span>
+                            <span id="windValue">--</span>
+                        </span>
+                        <span>
+                            <span class="detail-label">Humidity:</span>
+                            <span id="humidityValue">--</span></span
+                        >
+                    </div>
+                </div>
+            </div>
+            <div id="bottomPanel">
+                <div id="forecast">
+                    <div class="forecast-item">
+                        <div id="forecastTime0" class="forecast-time">--</div>
+                        <div id="forecastTemp0" class="forecast-temp">--</div>
+                        <div id="forecastDesc0" class="forecast-desc"></div>
+                    </div>
+                    <div class="forecast-item">
+                        <div id="forecastTime1" class="forecast-time">--</div>
+                        <div id="forecastTemp1" class="forecast-temp">--</div>
+                        <div id="forecastDesc1" class="forecast-desc"></div>
+                    </div>
+                    <div class="forecast-item">
+                        <div id="forecastTime2" class="forecast-time">--</div>
+                        <div id="forecastTemp2" class="forecast-temp">--</div>
+                        <div id="forecastDesc2" class="forecast-desc"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="footer">
+                <div id="updatedInfo">Updated <span id="updatedValue">--</span></div>
+                <div id="status">Loading...</div>
+            </div>
         </div>
-    </div>
-    <div id="description">Loading...</div>
-    <div id="details">
-        <span><span class="detail-label">Feels:</span> <span id="feelsLikeValue">--</span></span>
-        <span><span class="detail-label">Wind:</span> <span id="windValue">--</span></span>
-        <span><span class="detail-label">Humidity:</span> <span id="humidityValue">--</span></span>
-    </div>
-    <div id="sunTimes">
-        <span><span class="detail-label">Sunrise:</span> <span id="sunriseValue">--</span></span>
-        <span><span class="detail-label">Sunset:</span> <span id="sunsetValue">--</span></span>
-    </div>
-    <div id="forecast">
-        <div class="forecast-item">
-            <div id="forecastTime0" class="forecast-time">--</div>
-            <div id="forecastTemp0" class="forecast-temp">--</div>
-            <div id="forecastDesc0" class="forecast-desc"></div>
-        </div>
-        <div class="forecast-item">
-            <div id="forecastTime1" class="forecast-time">--</div>
-            <div id="forecastTemp1" class="forecast-temp">--</div>
-            <div id="forecastDesc1" class="forecast-desc"></div>
-        </div>
-        <div class="forecast-item">
-            <div id="forecastTime2" class="forecast-time">--</div>
-            <div id="forecastTemp2" class="forecast-temp">--</div>
-            <div id="forecastDesc2" class="forecast-desc"></div>
-        </div>
-    </div>
-    <div id="updated">Updated <span id="updatedValue">--</span></div>
-    <div id="status">Loading...</div>
-</div>
-</body>
+    </body>
 </html>

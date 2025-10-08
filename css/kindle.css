@@ -15,6 +15,56 @@ html, body {
     position: relative;
 }
 
+#mainPanel {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 32px;
+    margin-top: 24px;
+}
+
+#timePanel,
+#weatherPanel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#timePanel {
+    align-items: flex-start;
+}
+
+#dateValue {
+    font-size: 36px;
+    font-weight: bold;
+}
+
+#timeValue {
+    font-size: 96px;
+    font-weight: bold;
+    line-height: 1;
+    margin-top: 8px;
+}
+
+#weatherPanel {
+    align-items: flex-end;
+    text-align: right;
+}
+
+#sunTimes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 28px;
+    margin-top: 16px;
+}
+
+#sunTimes span {
+    display: flex;
+    gap: 12px;
+}
+
 #location {
     font-size: 44px;
     text-align: right;
@@ -47,8 +97,7 @@ html, body {
     text-transform: capitalize;
 }
 
-#details,
-#sunTimes {
+#details {
     display: flex;
     flex-wrap: wrap;
     gap: 24px;
@@ -60,8 +109,11 @@ html, body {
     font-weight: bold;
 }
 
-#forecast {
+#bottomPanel {
     margin-top: 36px;
+}
+
+#forecast {
     border-top: 2px solid #000000;
     padding-top: 24px;
     display: flex;
@@ -95,18 +147,19 @@ html, body {
     text-transform: capitalize;
 }
 
-#updated {
-    position: absolute;
-    bottom: 32px;
-    left: 40px;
+#footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 24px;
+    margin-top: 28px;
+}
+
+#updatedInfo {
     font-size: 24px;
 }
 
 #status {
-    position: absolute;
-    bottom: 32px;
-    right: 40px;
-    font-size: 24px;
     text-align: right;
     max-width: 45%;
 }
