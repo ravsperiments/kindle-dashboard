@@ -305,7 +305,7 @@
             }
 
             if (currentTimeElement) {
-                currentTimeElement.innerHTML = currentMoment.format("h:mm");
+                currentTimeElement.innerHTML = currentMoment.format("h:mm A");
             }
         }
 
@@ -388,7 +388,7 @@
             ["wi-moon-alt-waning-crescent-6","wi-moon-alt-waxing-gibbous-6"],
         ];
 
-        var timeFormat = "HH:mm";
+        var timeFormat = "h:mm A";
 
         // Config parameters.
         var api_params, api_appId, api_lang, api_units, api_locParams, rotation, night_mode, refreshTime, utcOffset, tempType;

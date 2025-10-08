@@ -3,7 +3,7 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
-    font-family: 'Fredoka', sans-serif;
+    font-family: "Fredoka", sans-serif;
     font-size: 0;
 }
 
@@ -41,7 +41,7 @@ html.night {
     font-size: 50px;
     font-size: 7rem;
     position: absolute;
-    top: 1.5%;
+    top: 5%;
     left: 3.3%;
     display: block;
     text-align: left;
@@ -49,16 +49,15 @@ html.night {
 
 #configButton {
     position: absolute;
-    top: 1.5%;
+    top: 5%;
     right: 3.3%;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 6rem;
-    height: 6rem;
-    color: #e3e3e3;
-    background-color: #000000;
-    border-radius: 50%;
+    width: 12rem;
+    height: 12rem;
+    color: #000000;
+    background-color: #ffffff;
     text-decoration: none;
     transition: opacity 0.2s ease-in-out;
 }
@@ -76,8 +75,8 @@ html.night {
 }
 
 .night #configButton {
-    background-color: #222222;
-    color: #e3e3e3;
+    background-color: #000000;
+    color: #ffffff;
 }
 
 #moonphaseLine {
@@ -125,7 +124,7 @@ html.night {
     bottom: 1.5%;
     left: 3.3%;
     font-size: 22px;
-    font-size: 3rem;
+    font-size: 5rem;
     text-align: left;
 }
 
@@ -146,7 +145,7 @@ html.night {
     bottom: 6%;
     left: 0;
     border-top: 5px solid black;
-    border-bottom: 1px solid black;
+    border-bottom: 5px solid black;
     height: 39%;
 }
 
@@ -215,17 +214,17 @@ html.night {
 
 .landscape #moonphaseIcon {
     font-size: 16.9px;
-    font-size: 3.4rem;
+    font-size: 8rem;
 }
 
 .landscape #moonphaseDate {
     font-size: 15.5px;
-    font-size: 3rem;
+    font-size: 6rem;
 }
 
 .landscape #currentTime {
     font-size: 35.4px;
-    font-size: 7rem;
+    font-size: 24rem;
 }
 
 .landscape #temp {
@@ -235,7 +234,7 @@ html.night {
 
 .landscape #lastUpdate {
     font-size: 12.5px;
-    font-size: 2.5rem;
+    font-size: 2.4rem;
     bottom: 2%;
 }
 
@@ -246,13 +245,14 @@ html.night {
 .landscape #sun {
     font-size: 21.8px;
     font-size: 4.3rem;
-    margin-top: 6px;
-    margin-top: 1.2rem;
+    margin-top: 2px;
+    margin-top: 0.3rem;
 }
 
 .landscape .forecastIconWrapper {
     font-size: 71.9px;
     font-size: 14.2rem;
+    margin-top: 0.3rem;
 }
 
 .landscape .colTemp {
@@ -263,6 +263,8 @@ html.night {
 .landscape .colTime {
     font-size: 25.3px;
     font-size: 5rem;
+    margin-bottom: 0.3rem;
+}
 }
 
 .landscape .colDesc {
