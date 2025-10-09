@@ -1,2 +1,3 @@
 .idea
-/config.js
+# Local override copied from config.js.sample
+config.js
