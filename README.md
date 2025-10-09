@@ -15,9 +15,9 @@ The page uses JSONP to call OpenWeather and automatically falls back to HTTP if 
 
 ## What’s on screen
 
-Current temperature, description, feels-like, wind, humidity, sunrise, and sunset.  
-Three upcoming forecast slots with time, temperature, and brief conditions.  
-Status banner that reports the last update time or any errors.  
+1. Current temperature, date, time, sunrise, and sunset.  
+2. TFour upcoming forecast slots with time, temperature, and brief conditions.  
+3. Status banner that reports the last update time  
 Everything is laid out for the Paperwhite 6th gen resolution, using only standard fonts and no third-party assets.
 
 ## Kindle setup notes
