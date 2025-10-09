@@ -7,8 +7,9 @@ This project extends [matopeto/kindle-weather-dashboard](https://github.com/mato
 ## Deploy to Kindle
 
 1. Copy the project folder to the root of the Kindle storage (e.g. `/mnt/us/dashboard`).
-2. Safely eject the Kindle.
-3. On the Kindle, open the experimental browser and visit `file:///mnt/us/dashboard/index.html`.
+2. Duplicate `config.js.sample` to `config.js`, fill in your location and OpenWeather API key, and keep `config.js` out of version control.
+3. Safely eject the Kindle.
+4. On the Kindle, open the experimental browser and visit `file:///mnt/us/dashboard/index.html`.
 
 The page uses JSONP to call OpenWeather and automatically falls back to HTTP if HTTPS fails, which keeps it working on older firmware.
 
