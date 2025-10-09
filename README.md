@@ -1,7 +1,8 @@
 # Paperwhite Weather Dashboard
 
-Minimal weather dashboard built specifically for the Kindle Paperwhite (6th gen).  
-All settings live directly in `index.html`, so you can keep the codebase small and copy it straight to the device.
+This project extends [matopeto/kindle-weather-dashboard](https://github.com/matopeto/kindle-weather-dashboard) with my own layout tweaks and a persistent clock so the Kindle always shows the current time alongside weather details. All settings still live directly in `index.html`, keeping deployment lightweight for e-ink hardware.
+
+![Kindle dashboard screenshot](Screenshot%202025-10-08%20at%209.16.28%E2%80%AFPM.png)
 
 ## Configure
 
@@ -38,5 +39,19 @@ Everything is laid out for the Paperwhite 6th gen resolution, using only standar
 - The Kindle browser exposes only a subset of modern APIs—`fetch` and `Promise` are not used.
 - JSONP requests time out after 15 seconds and automatically retry over HTTP.
 - Adjust typography in `css/kindle.css` if you run a different Kindle model.
+
+## Kindle setup notes
+
+- Device: Kindle Paperwhite 2 running firmware 5.12.2.  
+- Jailbreak: Followed the guide at [MobileRead](https://www.mobileread.com/forums/showthread.php?t=346037) and installed KUAL, although the jailbreak is probably not required to run this dashboard.  
+- Workflow pain points: I had loads of fun and an equal amount of frustration wrangling CSS in the Kindle browser. Mounting the Kindle to copy files, unmounting to test, then mounting again for every tweak is painfully slow, and I definitely need to find a better way in the future.
+
+## Future experiments
+
+- Explore installing Python so the Kindle can act as a controller for my Arduino robot.
+
+## License
+
+You may copy, modify, and distribute this project freely. A credit or link back is appreciated but not required.
 
 Happy hacking!
