@@ -2,7 +2,7 @@
 
 This project extends [matopeto/kindle-weather-dashboard](https://github.com/matopeto/kindle-weather-dashboard) with my own layout tweaks and a persistent clock so the Kindle always shows the current time alongside weather details. All settings still live directly in `index.html`, keeping deployment lightweight for e-ink hardware.
 
-![Kindle dashboard screenshot](Screenshot%202025-10-08%20at%209.16.28%E2%80%AFPM.png)
+![Kindle dashboard screenshot](kindle-dashboard-sample.png)
 
 ## Deploy to Kindle
 
